@@ -143,7 +143,11 @@ pub fn execute_call_entry_point(
 
     // Add class hash to the call, that will appear in the output (call info).
     entry_point.class_hash = Some(class_hash);
-    let contract_class = state.get_compiled_contract_class(class_hash)?;
+    // let contract_class = state.get_compiled_contract_class(class_hash)?;
+    let contract_class = state.get_compiled_contract_class(class_hash).map_err(|e| {
+        eprintln!("Error: {:?}", e);
+        e
+    })?;
 
     dbg!("10");
 
