@@ -43,6 +43,7 @@ pub fn execute_call_entry_point(
     resources: &mut ExecutionResources,
     context: &mut EntryPointExecutionContext,
 ) -> EntryPointExecutionResult<CallInfo> {
+    println!("execute_call_entry_point: {:?}", entry_point);
     let cheated_data = if let CallType::Delegate = entry_point.call_type {
         cheatnet_state
             .trace_data
