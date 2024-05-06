@@ -43,7 +43,6 @@ pub fn execute_call_entry_point(
     resources: &mut ExecutionResources,
     context: &mut EntryPointExecutionContext,
 ) -> EntryPointExecutionResult<CallInfo> {
-    println!("execute_call_entry_point: {:?}", entry_point);
     let cheated_data = if let CallType::Delegate = entry_point.call_type {
         cheatnet_state
             .trace_data
@@ -57,8 +56,6 @@ pub fn execute_call_entry_point(
         cheated_data_
     };
 
-    dbg!("1");
-
     // region: Modified blockifier code
     // We skip recursion depth validation here.
     cheatnet_state.trace_data.enter_nested_call(
@@ -66,8 +63,6 @@ pub fn execute_call_entry_point(
         resources.clone(),
         cheated_data,
     );
-
-    dbg!("2");
 
     if let Some(cheat_status) = get_mocked_function_cheat_status(entry_point, cheatnet_state) {
         if let CheatStatus::Cheated(ret_data, _) = (*cheat_status).clone() {
@@ -91,13 +86,9 @@ pub fn execute_call_entry_point(
     }
     // endregion
 
-    dbg!("3");
-
     // Validate contract is deployed.
     let storage_address = entry_point.storage_address;
     let storage_class_hash = state.get_class_hash_at(entry_point.storage_address)?;
-
-    dbg!("4");
 
     if storage_class_hash == ClassHash::default() {
         return Err(
@@ -105,29 +96,21 @@ pub fn execute_call_entry_point(
         );
     }
 
-    dbg!("5");
-
     let maybe_replacement_class = cheatnet_state
         .replaced_bytecode_contracts
         .get(&storage_address)
         .copied();
-
-    dbg!("6");
 
     let class_hash = entry_point
         .class_hash
         .or(maybe_replacement_class)
         .unwrap_or(storage_class_hash); // If not given, take the storage contract class hash.
 
-    dbg!("7");
-
     // region: Modified blockifier code
     cheatnet_state
         .trace_data
         .set_class_hash_for_current_call(class_hash);
     // endregion
-
-    dbg!("8");
 
     // Hack to prevent version 0 attack on argent accounts.
     if context.tx_context.tx_info.version() == TransactionVersion(StarkFelt::from(0_u8))
@@ -139,17 +122,9 @@ pub fn execute_call_entry_point(
         return Err(PreExecutionError::FraudAttempt.into());
     }
 
-    dbg!("9");
-
     // Add class hash to the call, that will appear in the output (call info).
     entry_point.class_hash = Some(class_hash);
-    // let contract_class = state.get_compiled_contract_class(class_hash)?;
-    let contract_class = state.get_compiled_contract_class(class_hash).map_err(|e| {
-        eprintln!("Error: {:?}", e);
-        e
-    })?;
-
-    dbg!("10");
+    let contract_class = state.get_compiled_contract_class(class_hash)?;
 
     // Region: Modified blockifier code
     let result = match contract_class {
@@ -170,8 +145,6 @@ pub fn execute_call_entry_point(
             context,
         ),
     };
-
-    dbg!("11");
 
     // region: Modified blockifier code
     match result {

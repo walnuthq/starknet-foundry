@@ -41,7 +41,6 @@ pub fn execute_entry_point_call_cairo1(
     Option<Vec<TraceEntry>>,
     Vec<Option<Felt252>>,
 )> {
-    println!("execute_entry_point_call_cairo1: {:?}", call);
     let VmExecutionContext {
         mut runner,
         mut vm,
