@@ -32,6 +32,7 @@ use cairo_vm::vm::trace::trace_entry::TraceEntry;
 use conversions::FromConv;
 use crate::runtime_extensions::call_to_blockifier_runtime_extension::rpc::{AddressOrClassHash, CallResult};
 use crate::runtime_extensions::common::sum_syscall_counters;
+use internal_tracing::{get_internal_fn_call_trace, InternalFnCallTraceEntryNode};
 
 // blockifier/src/execution/entry_point.rs:180 (CallEntryPoint::execute)
 #[allow(clippy::too_many_lines)]
@@ -77,6 +78,7 @@ pub fn execute_call_entry_point(
                     ret_data: ret_data_f252,
                 },
                 &[],
+                None,
                 None,
             );
             return Ok(mocked_call_info(entry_point.clone(), ret_data.clone()));
@@ -143,7 +145,13 @@ pub fn execute_call_entry_point(
 
     // region: Modified blockifier code
     match result {
-        Ok((call_info, syscall_counter, vm_trace)) => {
+        Ok((call_info, syscall_counter, vm_trace, relocated_memory)) => {
+            let internal_fn_call_trace = if let Some(vm_trace) = &vm_trace {
+                get_internal_fn_call_trace(class_hash, &relocated_memory, vm_trace)
+            } else {
+                None
+            };
+
             remove_syscall_resources_and_exit_success_call(
                 &call_info,
                 &syscall_counter,
@@ -151,10 +159,12 @@ pub fn execute_call_entry_point(
                 resources,
                 cheatnet_state,
                 vm_trace,
+                internal_fn_call_trace,
             );
             Ok(call_info)
         }
         Err(err) => {
+            println!("Error: {:?}", err);
             exit_error_call(&err, cheatnet_state, resources, entry_point);
             Err(err)
         }
@@ -169,6 +179,7 @@ fn remove_syscall_resources_and_exit_success_call(
     resources: &mut ExecutionResources,
     cheatnet_state: &mut CheatnetState,
     vm_trace: Option<Vec<TraceEntry>>,
+    internal_fn_call_trace: Option<InternalFnCallTraceEntryNode>,
 ) {
     let versioned_constants = context.tx_context.block_context.versioned_constants();
     // We don't want the syscall resources to pollute the results
@@ -184,6 +195,7 @@ fn remove_syscall_resources_and_exit_success_call(
         CallResult::from_success(call_info),
         &call_info.execution.l2_to_l1_messages,
         vm_trace,
+        internal_fn_call_trace,
     );
 }
 
@@ -202,6 +214,7 @@ fn exit_error_call(
         Default::default(),
         CallResult::from_err(error, &identifier),
         &[],
+        None,
         None,
     );
 }

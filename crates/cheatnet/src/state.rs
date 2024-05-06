@@ -13,6 +13,7 @@ use cairo_felt::Felt252;
 use runtime::starknet::state::DictStateReader;
 
 use starknet_api::core::EntryPointSelector;
+use internal_tracing::InternalFnCallTraceEntryNode;
 
 use crate::constants::{build_test_entry_point, TEST_CONTRACT_CLASS_HASH};
 use blockifier::blockifier::block::BlockInfo;
@@ -149,6 +150,7 @@ impl<T> CheatStatus<T> {
 }
 
 /// Tree structure representing trace of a call.
+#[derive(Debug)]
 pub struct CallTrace {
     pub entry_point: CallEntryPoint,
     // These also include resources used by internal calls
@@ -158,9 +160,10 @@ pub struct CallTrace {
     pub nested_calls: Vec<Rc<RefCell<CallTrace>>>,
     pub result: CallResult,
     pub vm_trace: Option<Vec<TraceEntry>>,
+    pub internal_fn_call_trace: Option<InternalFnCallTraceEntryNode>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct CallStackElement {
     // when we exit the call we use it to calculate resources used by the call
     resources_used_before_call: ExecutionResources,
@@ -168,6 +171,7 @@ struct CallStackElement {
     cheated_data: CheatedData,
 }
 
+#[derive(Debug)]
 pub struct NotEmptyCallStack(Vec<CallStackElement>);
 
 impl NotEmptyCallStack {
@@ -227,6 +231,7 @@ pub struct CheatedData {
     pub tx_info: Option<TxInfoMock>,
 }
 
+#[derive(Debug)]
 pub struct TraceData {
     pub current_call_stack: NotEmptyCallStack,
     pub is_vm_trace_needed: bool,
@@ -265,6 +270,7 @@ impl Default for CheatnetState {
             nested_calls: vec![],
             result: CallResult::Success { ret_data: vec![] },
             vm_trace: None,
+            internal_fn_call_trace: None,
         }));
         Self {
             rolled_contracts: Default::default(),
@@ -402,6 +408,7 @@ impl TraceData {
             nested_calls: vec![],
             result: CallResult::Success { ret_data: vec![] },
             vm_trace: None,
+            internal_fn_call_trace: None,
         }));
         let current_call = self.current_call_stack.top();
 
@@ -426,6 +433,7 @@ impl TraceData {
         result: CallResult,
         l2_to_l1_messages: &[OrderedL2ToL1Message],
         vm_trace: Option<Vec<TraceEntry>>,
+        internal_fn_call_trace: Option<InternalFnCallTraceEntryNode>,
     ) {
         let CallStackElement {
             resources_used_before_call,
@@ -445,6 +453,7 @@ impl TraceData {
 
         last_call.result = result;
         last_call.vm_trace = vm_trace;
+        last_call.internal_fn_call_trace = internal_fn_call_trace;
     }
 }
 

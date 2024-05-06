@@ -15,6 +15,7 @@ use blockifier::{
     },
     state::state_api::State,
 };
+use cairo_felt::Felt252;
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use cairo_vm::vm::trace::trace_entry::TraceEntry;
 use cairo_vm::{
@@ -34,7 +35,12 @@ pub fn execute_entry_point_call_cairo1(
     cheatnet_state: &mut CheatnetState, // Added parameter
     resources: &mut ExecutionResources,
     context: &mut EntryPointExecutionContext,
-) -> EntryPointExecutionResult<(CallInfo, SyscallCounter, Option<Vec<TraceEntry>>)> {
+) -> EntryPointExecutionResult<(
+    CallInfo,
+    SyscallCounter,
+    Option<Vec<TraceEntry>>,
+    Vec<Option<Felt252>>,
+)> {
     let VmExecutionContext {
         mut runner,
         mut vm,
@@ -85,6 +91,9 @@ pub fn execute_entry_point_call_cairo1(
     } else {
         None
     };
+
+    let relocated_memory = runner.relocated_memory.clone();
+
     let syscall_counter = cheatable_runtime
         .extended_runtime
         .hint_handler
@@ -105,7 +114,7 @@ pub fn execute_entry_point_call_cairo1(
         });
     }
 
-    Ok((call_info, syscall_counter, vm_trace))
+    Ok((call_info, syscall_counter, vm_trace, relocated_memory))
     // endregion
 }
 

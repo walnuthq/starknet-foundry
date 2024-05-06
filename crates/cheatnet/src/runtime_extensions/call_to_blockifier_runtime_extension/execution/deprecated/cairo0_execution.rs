@@ -15,6 +15,7 @@ use blockifier::execution::errors::EntryPointExecutionError;
 use blockifier::execution::execution_utils::Args;
 use blockifier::execution::syscalls::hint_processor::SyscallCounter;
 use blockifier::state::state_api::State;
+use cairo_felt::Felt252;
 use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use cairo_vm::vm::runners::cairo_runner::{CairoArg, CairoRunner, ExecutionResources};
 use cairo_vm::vm::trace::trace_entry::TraceEntry;
@@ -28,7 +29,12 @@ pub fn execute_entry_point_call_cairo0(
     cheatnet_state: &mut CheatnetState,
     resources: &mut ExecutionResources,
     context: &mut EntryPointExecutionContext,
-) -> EntryPointExecutionResult<(CallInfo, SyscallCounter, Option<Vec<TraceEntry>>)> {
+) -> EntryPointExecutionResult<(
+    CallInfo,
+    SyscallCounter,
+    Option<Vec<TraceEntry>>,
+    Vec<Option<Felt252>>,
+)> {
     let VmExecutionContext {
         mut runner,
         mut vm,
@@ -82,7 +88,7 @@ pub fn execute_entry_point_call_cairo0(
         n_total_args,
     )?;
 
-    Ok((execution_result, syscall_counter, None))
+    Ok((execution_result, syscall_counter, None, Vec::new()))
     // endregion
 }
 

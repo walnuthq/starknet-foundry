@@ -29,6 +29,7 @@ use starknet_api::state::StorageKey;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::io::Read;
+use std::sync::Arc;
 use tokio::runtime::Runtime;
 use universal_sierra_compiler_api::{compile_sierra, SierraType};
 use url::Url;
@@ -37,7 +38,6 @@ use url::Url;
 pub struct ForkStateReader {
     client: JsonRpcClient<HttpTransport>,
     block_number: BlockNumber,
-    runtime: Runtime,
     cache: RefCell<ForkCache>,
 }
 
@@ -50,7 +50,6 @@ impl ForkStateReader {
             ),
             client: JsonRpcClient::new(HttpTransport::new(url)),
             block_number,
-            runtime: Runtime::new().expect("Could not instantiate Runtime"),
         })
     }
 
@@ -78,10 +77,10 @@ impl BlockInfoReader for ForkStateReader {
             return Ok(cache_hit);
         }
 
-        match self
-            .runtime
-            .block_on(self.client.get_block_with_tx_hashes(self.block_id()))
-        {
+        match tokio::task::block_in_place(|| {
+            tokio::runtime::Handle::current()
+                .block_on(self.client.get_block_with_tx_hashes(self.block_id()))
+        }) {
             Ok(MaybePendingBlockWithTxHashes::Block(block)) => {
                 let block_info = BlockInfo {
                     block_number: BlockNumber(block.block_number),
@@ -118,11 +117,18 @@ impl StateReader for ForkStateReader {
             return Ok(cache_hit);
         }
 
-        match self.runtime.block_on(self.client.get_storage_at(
-            FieldElement::from_(contract_address),
-            FieldElement::from_(*key.0.key()),
-            self.block_id(),
-        )) {
+        match tokio::task::block_in_place(|| {
+            tokio::runtime::Handle::current().block_on(self.client.get_storage_at(
+                FieldElement::from_(contract_address),
+                FieldElement::from_(*key.0.key()),
+                self.block_id(),
+            ))
+        }) {
+        // match self.runtime.block_on(self.client.get_storage_at(
+        //     FieldElement::from_(contract_address),
+        //     FieldElement::from_(*key.0.key()),
+        //     self.block_id(),
+        // )) {
             Ok(value) => {
                 let value_sf = value.into_();
                 self.cache.borrow_mut()
@@ -142,10 +148,16 @@ impl StateReader for ForkStateReader {
             return Ok(cache_hit);
         }
 
-        match self.runtime.block_on(
-            self.client
-                .get_nonce(self.block_id(), FieldElement::from_(contract_address)),
-        ) {
+        match tokio::task::block_in_place(|| {
+            tokio::runtime::Handle::current().block_on(
+                self.client
+                    .get_nonce(self.block_id(), FieldElement::from_(contract_address)),
+            )
+        }) {
+            // match self.runtime.block_on(
+            //     self.client
+            //         .get_nonce(self.block_id(), FieldElement::from_(contract_address)),
+            // ) {
             Ok(nonce) => {
                 let nonce = nonce.into_();
                 self.cache
@@ -168,10 +180,16 @@ impl StateReader for ForkStateReader {
             return Ok(cache_hit);
         }
 
-        match self.runtime.block_on(
-            self.client
-                .get_class_hash_at(self.block_id(), FieldElement::from_(contract_address)),
-        ) {
+        match tokio::task::block_in_place(|| {
+            tokio::runtime::Handle::current().block_on(
+                self.client
+                    .get_class_hash_at(self.block_id(), FieldElement::from_(contract_address)),
+            )
+        }) {
+            // match self.runtime.block_on(
+            //     self.client
+            //         .get_class_hash_at(self.block_id(), FieldElement::from_(contract_address)),
+            // ) {
             Ok(class_hash) => {
                 let class_hash = class_hash.into_();
                 self.cache
@@ -199,10 +217,16 @@ impl StateReader for ForkStateReader {
             if let Some(cache_hit) = cache.get_compiled_contract_class(&class_hash) {
                 Ok(cache_hit)
             } else {
-                match self.runtime.block_on(
-                    self.client
-                        .get_class(self.block_id(), FieldElement::from_(class_hash)),
-                ) {
+                match tokio::task::block_in_place(|| {
+                    tokio::runtime::Handle::current().block_on(
+                        self.client
+                            .get_class(self.block_id(), FieldElement::from_(class_hash)),
+                    )
+                }) {
+                    // match self.runtime.block_on(
+                    //     self.client
+                    //         .get_class(self.block_id(), FieldElement::from_(class_hash)),
+                    // ) {
                     Ok(contract_class) => {
                         Ok(cache.insert_compiled_contract_class(class_hash, contract_class))
                     }
