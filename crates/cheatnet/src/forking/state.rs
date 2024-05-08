@@ -29,8 +29,6 @@ use starknet_api::state::StorageKey;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::io::Read;
-use std::sync::Arc;
-use tokio::runtime::Runtime;
 use universal_sierra_compiler_api::{compile_sierra, SierraType};
 use url::Url;
 
@@ -55,6 +53,16 @@ impl ForkStateReader {
 
     fn block_id(&self) -> BlockId {
         BlockId::Number(self.block_number.0)
+    }
+
+    pub fn get_compiled_contract_class_from_cache(
+        &self,
+        class_hash: ClassHash,
+    ) -> Option<ContractClassStarknet> {
+        self.cache
+            .borrow()
+            .get_compiled_contract_class(&class_hash)
+            .cloned()
     }
 }
 
