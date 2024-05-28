@@ -23,7 +23,7 @@ license-file = "LICENSE"
 [workspace.dependencies]
 # blockifier = "0.7.0-dev.1"
 # blockifier = { path = "../walnut-blockifier/crates/blockifier" }
-blockifier = { git = "https://github.com/walnuthq/blockifier", rev = "d9cb972dc7c7a984e5945a1289ba8d251985fef2" }
+blockifier = { git = "https://github.com/walnuthq/blockifier", rev = "8401ca0a1e0afc0e54fc6077bb9b90788923a0e3" }
 starknet_api = "0.12.0-dev.1"
 # cairo-lang-casm = { version = "2.6.0", features = ["serde"] }
 # cairo-lang-runner = "2.6.0"

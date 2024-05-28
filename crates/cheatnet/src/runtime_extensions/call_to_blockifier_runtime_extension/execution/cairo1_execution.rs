@@ -72,14 +72,14 @@ pub fn execute_entry_point_call_cairo1(
     };
 
     // Execute.
-    cheatable_run_entry_point(
+    let err = cheatable_run_entry_point(
         &mut vm,
         &mut runner,
         &mut cheatable_runtime,
         &entry_point,
         &args,
         program_extra_data_length,
-    )?;
+    );
 
     let vm_trace = if cheatable_runtime
         .extension
@@ -93,6 +93,22 @@ pub fn execute_entry_point_call_cairo1(
     };
 
     let relocated_memory = runner.relocated_memory.clone();
+
+    match err {
+        Ok(_) => {}
+        Err(err) => match err {
+            EntryPointExecutionError::CairoRunError(err) => {
+                return Err(EntryPointExecutionError::CairoRunErrorWithTraceAndMemory {
+                    error: err,
+                    vm_trace,
+                    relocated_memory,
+                });
+            }
+            _ => {
+                return Err(err);
+            }
+        },
+    }
 
     let syscall_counter = cheatable_runtime
         .extended_runtime
@@ -109,9 +125,13 @@ pub fn execute_entry_point_call_cairo1(
         program_extra_data_length,
     )?;
     if call_info.execution.failed {
-        return Err(EntryPointExecutionError::ExecutionFailed {
-            error_data: call_info.execution.retdata.0,
-        });
+        return Err(
+            EntryPointExecutionError::ExecutionFailedWithTraceAndMemory {
+                error_data: call_info.execution.retdata.0,
+                vm_trace: vm_trace,
+                relocated_memory,
+            },
+        );
     }
 
     Ok((call_info, syscall_counter, vm_trace, relocated_memory))
@@ -133,19 +153,26 @@ pub fn cheatable_run_entry_point(
     // endregion
     let args: Vec<&CairoArg> = args.iter().collect();
 
-    runner.run_from_entrypoint(
+    let err = runner.run_from_entrypoint(
         entry_point.pc(),
         &args,
         verify_secure,
         Some(program_segment_size),
         vm,
         hint_processor,
-    )?;
+    );
 
     // region: Modified blockifier code
     // Relocate trace to then collect it
     runner.relocate(vm, true).map_err(CairoRunError::from)?;
     // endregion
+
+    match err {
+        Ok(_) => {}
+        Err(err) => {
+            return Err(EntryPointExecutionError::CairoRunError(err));
+        }
+    }
 
     Ok(())
 }

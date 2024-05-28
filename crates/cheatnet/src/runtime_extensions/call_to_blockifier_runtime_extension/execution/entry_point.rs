@@ -167,8 +167,50 @@ pub fn execute_call_entry_point(
             Ok(call_info)
         }
         Err(err) => {
-            println!("Error: {:?}", err);
-            exit_error_call(&err, cheatnet_state, resources, entry_point);
+            let identifier = match entry_point.call_type {
+                CallType::Call => AddressOrClassHash::ContractAddress(entry_point.storage_address),
+                CallType::Delegate => {
+                    AddressOrClassHash::ClassHash(entry_point.class_hash.unwrap())
+                }
+            };
+            let call_result = CallResult::from_err(&err, &identifier);
+            let err = match err {
+                EntryPointExecutionError::ExecutionFailedWithTraceAndMemory { error_data, vm_trace, relocated_memory } => {
+                    let internal_fn_call_trace = if let Some(vm_trace) = &vm_trace {
+                        get_internal_fn_call_trace(
+                            entry_point.class_hash.unwrap(),
+                            &relocated_memory,
+                            vm_trace,
+                        )
+                    } else {
+                        None
+                    };
+                    exit_error_call(call_result, cheatnet_state, resources, entry_point, vm_trace, internal_fn_call_trace);
+                    EntryPointExecutionError::ExecutionFailed { error_data }
+                }
+                EntryPointExecutionError::CairoRunErrorWithTraceAndMemory {
+                    error,
+                    vm_trace,
+                    relocated_memory,
+                } => {
+                    let internal_fn_call_trace = if let Some(vm_trace) = &vm_trace {
+                        get_internal_fn_call_trace(
+                            entry_point.class_hash.unwrap(),
+                            &relocated_memory,
+                            vm_trace,
+                        )
+                    } else {
+                        None
+                    };
+                    exit_error_call(call_result, cheatnet_state, resources, entry_point, vm_trace, internal_fn_call_trace);
+                    EntryPointExecutionError::CairoRunError(error)
+                }
+                _ => {
+                    exit_error_call(call_result, cheatnet_state, resources, entry_point, None, None);
+                    err
+                }
+            };
+
             Err(err)
         }
     }
@@ -203,22 +245,20 @@ fn remove_syscall_resources_and_exit_success_call(
 }
 
 fn exit_error_call(
-    error: &EntryPointExecutionError,
+    call_result: CallResult,
     cheatnet_state: &mut CheatnetState,
     resources: &mut ExecutionResources,
     entry_point: &CallEntryPoint,
+    vm_trace: Option<Vec<TraceEntry>>,
+    internal_fn_call_trace: Option<InternalFnCallTraceEntryNode>,
 ) {
-    let identifier = match entry_point.call_type {
-        CallType::Call => AddressOrClassHash::ContractAddress(entry_point.storage_address),
-        CallType::Delegate => AddressOrClassHash::ClassHash(entry_point.class_hash.unwrap()),
-    };
     cheatnet_state.trace_data.exit_nested_call(
         resources,
         Default::default(),
-        CallResult::from_err(error, &identifier),
+        call_result,
         &[],
-        None,
-        None,
+        vm_trace,
+        internal_fn_call_trace,
     );
 }
 
