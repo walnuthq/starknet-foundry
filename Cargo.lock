@@ -3119,6 +3119,7 @@ dependencies = [
  "cairo-felt",
  "cairo-lang-sierra 2.6.3",
  "cairo-lang-sierra-to-casm 2.6.3",
+ "cairo-lang-sierra-type-size 2.6.3",
  "cairo-lang-starknet-classes 2.6.3",
  "cairo-vm",
  "indextree",
@@ -3126,6 +3127,7 @@ dependencies = [
  "num-bigint",
  "serde",
  "serde_json",
+ "smol_str",
  "starknet_api",
 ]
 

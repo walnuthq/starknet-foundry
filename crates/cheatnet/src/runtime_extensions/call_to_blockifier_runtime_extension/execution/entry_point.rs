@@ -32,7 +32,6 @@ use cairo_vm::vm::trace::trace_entry::TraceEntry;
 use conversions::FromConv;
 use crate::runtime_extensions::call_to_blockifier_runtime_extension::rpc::{AddressOrClassHash, CallResult};
 use crate::runtime_extensions::common::sum_syscall_counters;
-use internal_tracing::{get_internal_fn_call_trace, InternalFnCallTraceEntryNode};
 
 // blockifier/src/execution/entry_point.rs:180 (CallEntryPoint::execute)
 #[allow(clippy::too_many_lines)]
@@ -149,12 +148,6 @@ pub fn execute_call_entry_point(
     // region: Modified blockifier code
     match result {
         Ok((call_info, syscall_counter, vm_trace, relocated_memory)) => {
-            let internal_fn_call_trace = if let Some(vm_trace) = &vm_trace {
-                get_internal_fn_call_trace(class_hash, &relocated_memory, vm_trace)
-            } else {
-                None
-            };
-
             remove_syscall_resources_and_exit_success_call(
                 &call_info,
                 &syscall_counter,
@@ -162,7 +155,7 @@ pub fn execute_call_entry_point(
                 resources,
                 cheatnet_state,
                 vm_trace,
-                internal_fn_call_trace,
+                Some(relocated_memory),
             );
             Ok(call_info)
         }
@@ -175,17 +168,19 @@ pub fn execute_call_entry_point(
             };
             let call_result = CallResult::from_err(&err, &identifier);
             let err = match err {
-                EntryPointExecutionError::ExecutionFailedWithTraceAndMemory { error_data, vm_trace, relocated_memory } => {
-                    let internal_fn_call_trace = if let Some(vm_trace) = &vm_trace {
-                        get_internal_fn_call_trace(
-                            entry_point.class_hash.unwrap(),
-                            &relocated_memory,
-                            vm_trace,
-                        )
-                    } else {
-                        None
-                    };
-                    exit_error_call(call_result, cheatnet_state, resources, entry_point, vm_trace, internal_fn_call_trace);
+                EntryPointExecutionError::ExecutionFailedWithTraceAndMemory {
+                    error_data,
+                    vm_trace,
+                    relocated_memory,
+                } => {
+                    exit_error_call(
+                        call_result,
+                        cheatnet_state,
+                        resources,
+                        entry_point,
+                        vm_trace,
+                        Some(relocated_memory),
+                    );
                     EntryPointExecutionError::ExecutionFailed { error_data }
                 }
                 EntryPointExecutionError::CairoRunErrorWithTraceAndMemory {
@@ -193,20 +188,25 @@ pub fn execute_call_entry_point(
                     vm_trace,
                     relocated_memory,
                 } => {
-                    let internal_fn_call_trace = if let Some(vm_trace) = &vm_trace {
-                        get_internal_fn_call_trace(
-                            entry_point.class_hash.unwrap(),
-                            &relocated_memory,
-                            vm_trace,
-                        )
-                    } else {
-                        None
-                    };
-                    exit_error_call(call_result, cheatnet_state, resources, entry_point, vm_trace, internal_fn_call_trace);
+                    exit_error_call(
+                        call_result,
+                        cheatnet_state,
+                        resources,
+                        entry_point,
+                        vm_trace,
+                        Some(relocated_memory),
+                    );
                     EntryPointExecutionError::CairoRunError(error)
                 }
                 _ => {
-                    exit_error_call(call_result, cheatnet_state, resources, entry_point, None, None);
+                    exit_error_call(
+                        call_result,
+                        cheatnet_state,
+                        resources,
+                        entry_point,
+                        None,
+                        None,
+                    );
                     err
                 }
             };
@@ -224,7 +224,7 @@ fn remove_syscall_resources_and_exit_success_call(
     resources: &mut ExecutionResources,
     cheatnet_state: &mut CheatnetState,
     vm_trace: Option<Vec<TraceEntry>>,
-    internal_fn_call_trace: Option<InternalFnCallTraceEntryNode>,
+    relocated_memory: Option<Vec<Option<Felt252>>>,
 ) {
     let versioned_constants = context.tx_context.block_context.versioned_constants();
     // We don't want the syscall resources to pollute the results
@@ -240,7 +240,7 @@ fn remove_syscall_resources_and_exit_success_call(
         CallResult::from_success(call_info),
         &call_info.execution.l2_to_l1_messages,
         vm_trace,
-        internal_fn_call_trace,
+        relocated_memory,
     );
 }
 
@@ -250,7 +250,7 @@ fn exit_error_call(
     resources: &mut ExecutionResources,
     entry_point: &CallEntryPoint,
     vm_trace: Option<Vec<TraceEntry>>,
-    internal_fn_call_trace: Option<InternalFnCallTraceEntryNode>,
+    relocated_memory: Option<Vec<Option<Felt252>>>,
 ) {
     cheatnet_state.trace_data.exit_nested_call(
         resources,
@@ -258,7 +258,7 @@ fn exit_error_call(
         call_result,
         &[],
         vm_trace,
-        internal_fn_call_trace,
+        relocated_memory,
     );
 }
 

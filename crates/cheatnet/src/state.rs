@@ -12,8 +12,8 @@ use blockifier::{
 use cairo_felt::Felt252;
 use runtime::starknet::state::DictStateReader;
 
-use starknet_api::core::EntryPointSelector;
 use internal_tracing::InternalFnCallTraceEntryNode;
+use starknet_api::core::EntryPointSelector;
 
 use crate::constants::{build_test_entry_point, TEST_CONTRACT_CLASS_HASH};
 use blockifier::blockifier::block::BlockInfo;
@@ -160,7 +160,7 @@ pub struct CallTrace {
     pub nested_calls: Vec<Rc<RefCell<CallTrace>>>,
     pub result: CallResult,
     pub vm_trace: Option<Vec<TraceEntry>>,
-    pub internal_fn_call_trace: Option<InternalFnCallTraceEntryNode>,
+    pub relocated_memory: Option<Vec<Option<Felt252>>>,
 }
 
 #[derive(Clone, Debug)]
@@ -270,7 +270,7 @@ impl Default for CheatnetState {
             nested_calls: vec![],
             result: CallResult::Success { ret_data: vec![] },
             vm_trace: None,
-            internal_fn_call_trace: None,
+            relocated_memory: None,
         }));
         Self {
             rolled_contracts: Default::default(),
@@ -408,7 +408,7 @@ impl TraceData {
             nested_calls: vec![],
             result: CallResult::Success { ret_data: vec![] },
             vm_trace: None,
-            internal_fn_call_trace: None,
+            relocated_memory: None,
         }));
         let current_call = self.current_call_stack.top();
 
@@ -433,7 +433,7 @@ impl TraceData {
         result: CallResult,
         l2_to_l1_messages: &[OrderedL2ToL1Message],
         vm_trace: Option<Vec<TraceEntry>>,
-        internal_fn_call_trace: Option<InternalFnCallTraceEntryNode>,
+        relocated_memory: Option<Vec<Option<Felt252>>>,
     ) {
         let CallStackElement {
             resources_used_before_call,
@@ -453,7 +453,7 @@ impl TraceData {
 
         last_call.result = result;
         last_call.vm_trace = vm_trace;
-        last_call.internal_fn_call_trace = internal_fn_call_trace;
+        last_call.relocated_memory = relocated_memory;
     }
 }
 
