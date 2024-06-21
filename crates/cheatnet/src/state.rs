@@ -12,7 +12,6 @@ use blockifier::{
 use cairo_felt::Felt252;
 use runtime::starknet::state::DictStateReader;
 
-use internal_tracing::InternalFnCallTraceEntryNode;
 use starknet_api::core::EntryPointSelector;
 
 use crate::constants::{build_test_entry_point, TEST_CONTRACT_CLASS_HASH};

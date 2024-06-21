@@ -1575,7 +1575,6 @@ dependencies = [
  "fs2",
  "glob",
  "indoc",
- "internal-tracing",
  "k256",
  "num-bigint",
  "num-traits 0.2.18",
@@ -3068,12 +3067,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "indextree"
-version = "4.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a6f7e29c1619ec492f411b021ac9f30649d5f522ca6f287f2467ee48c8dfe10"
-
-[[package]]
 name = "indicatif"
 version = "0.17.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3108,27 +3101,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a5bbe824c507c5da5956355e86a746d82e0e1464f65d862cc5e71da70e94b2c"
 dependencies = [
  "cfg-if",
-]
-
-[[package]]
-name = "internal-tracing"
-version = "1.0.0"
-dependencies = [
- "anyhow",
- "byteorder",
- "cairo-felt",
- "cairo-lang-sierra 2.6.3",
- "cairo-lang-sierra-to-casm 2.6.3",
- "cairo-lang-sierra-type-size 2.6.3",
- "cairo-lang-starknet-classes 2.6.3",
- "cairo-vm",
- "indextree",
- "itertools 0.12.1",
- "num-bigint",
- "serde",
- "serde_json",
- "smol_str",
- "starknet_api",
 ]
 
 [[package]]
