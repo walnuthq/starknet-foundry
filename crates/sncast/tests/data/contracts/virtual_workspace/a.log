@@ -1,0 +1,1109 @@
+PackageMetadata {
+    id: PackageId {
+        repr: "cast_addition 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)",
+    },
+    name: "cast_addition",
+    version: Version {
+        major: 0,
+        minor: 1,
+        patch: 0,
+    },
+    edition: Some(
+        "2023_01",
+    ),
+    source: SourceId {
+        repr: "path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml",
+    },
+    manifest_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml",
+    root: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition",
+    dependencies: [
+        DependencyMetadata {
+            name: "core",
+            version_req: VersionReq {
+                comparators: [
+                    Comparator {
+                        op: Exact,
+                        major: 2,
+                        minor: Some(
+                            6,
+                        ),
+                        patch: Some(
+                            4,
+                        ),
+                        pre: Prerelease(""),
+                    },
+                ],
+            },
+            source: SourceId {
+                repr: "registry+https://there-is-no-default-registry-yet.com/",
+            },
+            kind: None,
+            extra: {},
+        },
+        DependencyMetadata {
+            name: "starknet",
+            version_req: VersionReq {
+                comparators: [
+                    Comparator {
+                        op: Caret,
+                        major: 2,
+                        minor: Some(
+                            4,
+                        ),
+                        patch: Some(
+                            0,
+                        ),
+                        pre: Prerelease(""),
+                    },
+                ],
+            },
+            source: SourceId {
+                repr: "registry+https://there-is-no-default-registry-yet.com/",
+            },
+            kind: None,
+            extra: {},
+        },
+        DependencyMetadata {
+            name: "test_plugin",
+            version_req: VersionReq {
+                comparators: [
+                    Comparator {
+                        op: Exact,
+                        major: 2,
+                        minor: Some(
+                            6,
+                        ),
+                        patch: Some(
+                            4,
+                        ),
+                        pre: Prerelease(""),
+                    },
+                ],
+            },
+            source: SourceId {
+                repr: "registry+https://there-is-no-default-registry-yet.com/",
+            },
+            kind: Some(
+                Dev,
+            ),
+            extra: {},
+        },
+    ],
+    targets: [
+        TargetMetadata {
+            kind: "lib",
+            name: "cast_addition",
+            source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/src/lib.cairo",
+            params: Object {},
+            extra: {},
+        },
+        TargetMetadata {
+            kind: "starknet-contract",
+            name: "cast_addition",
+            source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/src/lib.cairo",
+            params: Object {},
+            extra: {},
+        },
+        TargetMetadata {
+            kind: "test",
+            name: "cast_addition_unittest",
+            source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/src/lib.cairo",
+            params: Object {
+                "test-type": String("unit"),
+            },
+            extra: {},
+        },
+    ],
+    manifest_metadata: ManifestMetadata {
+        authors: None,
+        description: None,
+        documentation: None,
+        homepage: None,
+        keywords: None,
+        license: None,
+        license_file: None,
+        readme: None,
+        repository: None,
+        urls: None,
+        tool: None,
+    },
+    experimental_features: [],
+    extra: {},
+}
+Metadata {
+    version: VersionPin,
+    app_exe: Some(
+        "/Users/rohit/.asdf/installs/scarb/2.6.5/bin/scarb",
+    ),
+    app_version_info: VersionInfo {
+        version: Version {
+            major: 2,
+            minor: 6,
+            patch: 5,
+        },
+        commit_info: Some(
+            CommitInfo {
+                short_commit_hash: "d49f54394",
+                commit_hash: "d49f543948a7ae8a7d3108c8ff8f6b17dc15ef78",
+                commit_date: Some(
+                    "2024-06-11",
+                ),
+            },
+        ),
+        cairo: CairoVersionInfo {
+            version: Version {
+                major: 2,
+                minor: 6,
+                patch: 4,
+            },
+            commit_info: None,
+            extra: {},
+        },
+        extra: {},
+    },
+    target_dir: Some(
+        "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/target",
+    ),
+    runtime_manifest: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml",
+    workspace: WorkspaceMetadata {
+        manifest_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/Scarb.toml",
+        root: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace",
+        members: [
+            PackageId {
+                repr: "cast_addition 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)",
+            },
+            PackageId {
+                repr: "cast_fibonacci 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/Scarb.toml)",
+            },
+        ],
+        extra: {},
+    },
+    packages: [
+        PackageMetadata {
+            id: PackageId {
+                repr: "cast_addition 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)",
+            },
+            name: "cast_addition",
+            version: Version {
+                major: 0,
+                minor: 1,
+                patch: 0,
+            },
+            edition: Some(
+                "2023_01",
+            ),
+            source: SourceId {
+                repr: "path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml",
+            },
+            manifest_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml",
+            root: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition",
+            dependencies: [
+                DependencyMetadata {
+                    name: "core",
+                    version_req: VersionReq {
+                        comparators: [
+                            Comparator {
+                                op: Exact,
+                                major: 2,
+                                minor: Some(
+                                    6,
+                                ),
+                                patch: Some(
+                                    4,
+                                ),
+                                pre: Prerelease(""),
+                            },
+                        ],
+                    },
+                    source: SourceId {
+                        repr: "registry+https://there-is-no-default-registry-yet.com/",
+                    },
+                    kind: None,
+                    extra: {},
+                },
+                DependencyMetadata {
+                    name: "starknet",
+                    version_req: VersionReq {
+                        comparators: [
+                            Comparator {
+                                op: Caret,
+                                major: 2,
+                                minor: Some(
+                                    4,
+                                ),
+                                patch: Some(
+                                    0,
+                                ),
+                                pre: Prerelease(""),
+                            },
+                        ],
+                    },
+                    source: SourceId {
+                        repr: "registry+https://there-is-no-default-registry-yet.com/",
+                    },
+                    kind: None,
+                    extra: {},
+                },
+                DependencyMetadata {
+                    name: "test_plugin",
+                    version_req: VersionReq {
+                        comparators: [
+                            Comparator {
+                                op: Exact,
+                                major: 2,
+                                minor: Some(
+                                    6,
+                                ),
+                                patch: Some(
+                                    4,
+                                ),
+                                pre: Prerelease(""),
+                            },
+                        ],
+                    },
+                    source: SourceId {
+                        repr: "registry+https://there-is-no-default-registry-yet.com/",
+                    },
+                    kind: Some(
+                        Dev,
+                    ),
+                    extra: {},
+                },
+            ],
+            targets: [
+                TargetMetadata {
+                    kind: "lib",
+                    name: "cast_addition",
+                    source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/src/lib.cairo",
+                    params: Object {},
+                    extra: {},
+                },
+                TargetMetadata {
+                    kind: "starknet-contract",
+                    name: "cast_addition",
+                    source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/src/lib.cairo",
+                    params: Object {},
+                    extra: {},
+                },
+                TargetMetadata {
+                    kind: "test",
+                    name: "cast_addition_unittest",
+                    source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/src/lib.cairo",
+                    params: Object {
+                        "test-type": String("unit"),
+                    },
+                    extra: {},
+                },
+            ],
+            manifest_metadata: ManifestMetadata {
+                authors: None,
+                description: None,
+                documentation: None,
+                homepage: None,
+                keywords: None,
+                license: None,
+                license_file: None,
+                readme: None,
+                repository: None,
+                urls: None,
+                tool: None,
+            },
+            experimental_features: [],
+            extra: {},
+        },
+        PackageMetadata {
+            id: PackageId {
+                repr: "cast_fibonacci 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/Scarb.toml)",
+            },
+            name: "cast_fibonacci",
+            version: Version {
+                major: 0,
+                minor: 1,
+                patch: 0,
+            },
+            edition: Some(
+                "2023_01",
+            ),
+            source: SourceId {
+                repr: "path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/Scarb.toml",
+            },
+            manifest_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/Scarb.toml",
+            root: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci",
+            dependencies: [
+                DependencyMetadata {
+                    name: "cast_addition",
+                    version_req: VersionReq {
+                        comparators: [],
+                    },
+                    source: SourceId {
+                        repr: "path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml",
+                    },
+                    kind: None,
+                    extra: {},
+                },
+                DependencyMetadata {
+                    name: "core",
+                    version_req: VersionReq {
+                        comparators: [
+                            Comparator {
+                                op: Exact,
+                                major: 2,
+                                minor: Some(
+                                    6,
+                                ),
+                                patch: Some(
+                                    4,
+                                ),
+                                pre: Prerelease(""),
+                            },
+                        ],
+                    },
+                    source: SourceId {
+                        repr: "registry+https://there-is-no-default-registry-yet.com/",
+                    },
+                    kind: None,
+                    extra: {},
+                },
+                DependencyMetadata {
+                    name: "starknet",
+                    version_req: VersionReq {
+                        comparators: [
+                            Comparator {
+                                op: Caret,
+                                major: 2,
+                                minor: Some(
+                                    4,
+                                ),
+                                patch: Some(
+                                    0,
+                                ),
+                                pre: Prerelease(""),
+                            },
+                        ],
+                    },
+                    source: SourceId {
+                        repr: "registry+https://there-is-no-default-registry-yet.com/",
+                    },
+                    kind: None,
+                    extra: {},
+                },
+                DependencyMetadata {
+                    name: "test_plugin",
+                    version_req: VersionReq {
+                        comparators: [
+                            Comparator {
+                                op: Exact,
+                                major: 2,
+                                minor: Some(
+                                    6,
+                                ),
+                                patch: Some(
+                                    4,
+                                ),
+                                pre: Prerelease(""),
+                            },
+                        ],
+                    },
+                    source: SourceId {
+                        repr: "registry+https://there-is-no-default-registry-yet.com/",
+                    },
+                    kind: Some(
+                        Dev,
+                    ),
+                    extra: {},
+                },
+            ],
+            targets: [
+                TargetMetadata {
+                    kind: "lib",
+                    name: "cast_fibonacci",
+                    source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/src/lib.cairo",
+                    params: Object {},
+                    extra: {},
+                },
+                TargetMetadata {
+                    kind: "starknet-contract",
+                    name: "cast_fibonacci",
+                    source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/src/lib.cairo",
+                    params: Object {
+                        "build-external-contracts": Array [
+                            String("cast_addition::AdditionContract"),
+                        ],
+                    },
+                    extra: {},
+                },
+                TargetMetadata {
+                    kind: "test",
+                    name: "cast_fibonacci_unittest",
+                    source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/src/lib.cairo",
+                    params: Object {
+                        "test-type": String("unit"),
+                    },
+                    extra: {},
+                },
+            ],
+            manifest_metadata: ManifestMetadata {
+                authors: None,
+                description: None,
+                documentation: None,
+                homepage: None,
+                keywords: None,
+                license: None,
+                license_file: None,
+                readme: None,
+                repository: None,
+                urls: None,
+                tool: None,
+            },
+            experimental_features: [],
+            extra: {},
+        },
+        PackageMetadata {
+            id: PackageId {
+                repr: "core 2.6.4 (std)",
+            },
+            name: "core",
+            version: Version {
+                major: 2,
+                minor: 6,
+                patch: 4,
+            },
+            edition: Some(
+                "2023_11",
+            ),
+            source: SourceId {
+                repr: "std",
+            },
+            manifest_path: "/Users/rohit/Library/Caches/com.swmansion.scarb/registry/std/v2.6.4/core/Scarb.toml",
+            root: "/Users/rohit/Library/Caches/com.swmansion.scarb/registry/std/v2.6.4/core",
+            dependencies: [
+                DependencyMetadata {
+                    name: "test_plugin",
+                    version_req: VersionReq {
+                        comparators: [
+                            Comparator {
+                                op: Exact,
+                                major: 2,
+                                minor: Some(
+                                    6,
+                                ),
+                                patch: Some(
+                                    4,
+                                ),
+                                pre: Prerelease(""),
+                            },
+                        ],
+                    },
+                    source: SourceId {
+                        repr: "registry+https://there-is-no-default-registry-yet.com/",
+                    },
+                    kind: Some(
+                        Dev,
+                    ),
+                    extra: {},
+                },
+            ],
+            targets: [
+                TargetMetadata {
+                    kind: "lib",
+                    name: "core",
+                    source_path: "/Users/rohit/Library/Caches/com.swmansion.scarb/registry/std/v2.6.4/core/src/lib.cairo",
+                    params: Object {},
+                    extra: {},
+                },
+                TargetMetadata {
+                    kind: "test",
+                    name: "core_unittest",
+                    source_path: "/Users/rohit/Library/Caches/com.swmansion.scarb/registry/std/v2.6.4/core/src/lib.cairo",
+                    params: Object {
+                        "test-type": String("unit"),
+                    },
+                    extra: {},
+                },
+            ],
+            manifest_metadata: ManifestMetadata {
+                authors: None,
+                description: None,
+                documentation: None,
+                homepage: None,
+                keywords: None,
+                license: None,
+                license_file: None,
+                readme: None,
+                repository: None,
+                urls: None,
+                tool: None,
+            },
+            experimental_features: [
+                "coupons",
+                "negative_impls",
+            ],
+            extra: {},
+        },
+        PackageMetadata {
+            id: PackageId {
+                repr: "starknet 2.6.4 (std)",
+            },
+            name: "starknet",
+            version: Version {
+                major: 2,
+                minor: 6,
+                patch: 4,
+            },
+            edition: Some(
+                "2023_01",
+            ),
+            source: SourceId {
+                repr: "std",
+            },
+            manifest_path: "/Users/rohit/Library/Caches/com.swmansion.scarb/registry/std/v2.6.4/starknet/Scarb.toml",
+            root: "/Users/rohit/Library/Caches/com.swmansion.scarb/registry/std/v2.6.4/starknet",
+            dependencies: [
+                DependencyMetadata {
+                    name: "core",
+                    version_req: VersionReq {
+                        comparators: [
+                            Comparator {
+                                op: Exact,
+                                major: 2,
+                                minor: Some(
+                                    6,
+                                ),
+                                patch: Some(
+                                    4,
+                                ),
+                                pre: Prerelease(""),
+                            },
+                        ],
+                    },
+                    source: SourceId {
+                        repr: "registry+https://there-is-no-default-registry-yet.com/",
+                    },
+                    kind: None,
+                    extra: {},
+                },
+            ],
+            targets: [
+                TargetMetadata {
+                    kind: "cairo-plugin",
+                    name: "starknet",
+                    source_path: "/Users/rohit/Library/Caches/com.swmansion.scarb/registry/std/v2.6.4/starknet/src/lib.cairo",
+                    params: Object {
+                        "builtin": Bool(true),
+                    },
+                    extra: {},
+                },
+            ],
+            manifest_metadata: ManifestMetadata {
+                authors: None,
+                description: None,
+                documentation: None,
+                homepage: None,
+                keywords: None,
+                license: None,
+                license_file: None,
+                readme: None,
+                repository: None,
+                urls: None,
+                tool: None,
+            },
+            experimental_features: [],
+            extra: {},
+        },
+        PackageMetadata {
+            id: PackageId {
+                repr: "test_plugin 2.6.4 (std)",
+            },
+            name: "test_plugin",
+            version: Version {
+                major: 2,
+                minor: 6,
+                patch: 4,
+            },
+            edition: Some(
+                "2023_01",
+            ),
+            source: SourceId {
+                repr: "std",
+            },
+            manifest_path: "/Users/rohit/Library/Caches/com.swmansion.scarb/registry/std/v2.6.4/test_plugin/Scarb.toml",
+            root: "/Users/rohit/Library/Caches/com.swmansion.scarb/registry/std/v2.6.4/test_plugin",
+            dependencies: [],
+            targets: [
+                TargetMetadata {
+                    kind: "cairo-plugin",
+                    name: "test_plugin",
+                    source_path: "/Users/rohit/Library/Caches/com.swmansion.scarb/registry/std/v2.6.4/test_plugin/src/lib.cairo",
+                    params: Object {
+                        "builtin": Bool(true),
+                    },
+                    extra: {},
+                },
+            ],
+            manifest_metadata: ManifestMetadata {
+                authors: None,
+                description: None,
+                documentation: None,
+                homepage: None,
+                keywords: None,
+                license: None,
+                license_file: None,
+                readme: None,
+                repository: None,
+                urls: None,
+                tool: None,
+            },
+            experimental_features: [],
+            extra: {},
+        },
+    ],
+    compilation_units: [
+        CompilationUnitMetadata {
+            id: CompilationUnitId {
+                repr: "cast_addition-eek73dk05g7n0",
+            },
+            package: PackageId {
+                repr: "cast_addition 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)",
+            },
+            target: TargetMetadata {
+                kind: "lib",
+                name: "cast_addition",
+                source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/src/lib.cairo",
+                params: Object {},
+                extra: {},
+            },
+            compiler_config: Object {
+                "allow_warnings": Bool(true),
+                "enable_gas": Bool(true),
+                "sierra_replace_ids": Bool(true),
+            },
+            components: [
+                CompilationUnitComponentMetadata {
+                    package: PackageId {
+                        repr: "cast_addition 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)",
+                    },
+                    name: "cast_addition",
+                    source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/src/lib.cairo",
+                    cfg: None,
+                    extra: {},
+                },
+                CompilationUnitComponentMetadata {
+                    package: PackageId {
+                        repr: "core 2.6.4 (std)",
+                    },
+                    name: "core",
+                    source_path: "/Users/rohit/Library/Caches/com.swmansion.scarb/registry/std/v2.6.4/core/src/lib.cairo",
+                    cfg: None,
+                    extra: {},
+                },
+            ],
+            cairo_plugins: [
+                CompilationUnitCairoPluginMetadata {
+                    package: PackageId {
+                        repr: "starknet 2.6.4 (std)",
+                    },
+                    extra: {},
+                },
+            ],
+            cfg: [
+                KV(
+                    "target",
+                    "lib",
+                ),
+            ],
+            extra: {
+                "components": Array [
+                    String("cast_addition 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)"),
+                    String("core 2.6.4 (std)"),
+                ],
+            },
+        },
+        CompilationUnitMetadata {
+            id: CompilationUnitId {
+                repr: "cast_addition-lku86m7pefpsg",
+            },
+            package: PackageId {
+                repr: "cast_addition 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)",
+            },
+            target: TargetMetadata {
+                kind: "starknet-contract",
+                name: "cast_addition",
+                source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/src/lib.cairo",
+                params: Object {},
+                extra: {},
+            },
+            compiler_config: Object {
+                "allow_warnings": Bool(true),
+                "enable_gas": Bool(true),
+                "sierra_replace_ids": Bool(true),
+            },
+            components: [
+                CompilationUnitComponentMetadata {
+                    package: PackageId {
+                        repr: "cast_addition 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)",
+                    },
+                    name: "cast_addition",
+                    source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/src/lib.cairo",
+                    cfg: None,
+                    extra: {},
+                },
+                CompilationUnitComponentMetadata {
+                    package: PackageId {
+                        repr: "core 2.6.4 (std)",
+                    },
+                    name: "core",
+                    source_path: "/Users/rohit/Library/Caches/com.swmansion.scarb/registry/std/v2.6.4/core/src/lib.cairo",
+                    cfg: None,
+                    extra: {},
+                },
+            ],
+            cairo_plugins: [
+                CompilationUnitCairoPluginMetadata {
+                    package: PackageId {
+                        repr: "starknet 2.6.4 (std)",
+                    },
+                    extra: {},
+                },
+            ],
+            cfg: [
+                KV(
+                    "target",
+                    "starknet-contract",
+                ),
+            ],
+            extra: {
+                "components": Array [
+                    String("cast_addition 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)"),
+                    String("core 2.6.4 (std)"),
+                ],
+            },
+        },
+        CompilationUnitMetadata {
+            id: CompilationUnitId {
+                repr: "cast_addition-n236gfrbi6utc",
+            },
+            package: PackageId {
+                repr: "cast_addition 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)",
+            },
+            target: TargetMetadata {
+                kind: "test",
+                name: "cast_addition_unittest",
+                source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/src/lib.cairo",
+                params: Object {
+                    "test-type": String("unit"),
+                },
+                extra: {},
+            },
+            compiler_config: Object {
+                "allow_warnings": Bool(true),
+                "enable_gas": Bool(true),
+                "sierra_replace_ids": Bool(true),
+            },
+            components: [
+                CompilationUnitComponentMetadata {
+                    package: PackageId {
+                        repr: "cast_addition 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)",
+                    },
+                    name: "cast_addition",
+                    source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/src/lib.cairo",
+                    cfg: None,
+                    extra: {},
+                },
+                CompilationUnitComponentMetadata {
+                    package: PackageId {
+                        repr: "core 2.6.4 (std)",
+                    },
+                    name: "core",
+                    source_path: "/Users/rohit/Library/Caches/com.swmansion.scarb/registry/std/v2.6.4/core/src/lib.cairo",
+                    cfg: Some(
+                        [
+                            KV(
+                                "target",
+                                "test",
+                            ),
+                        ],
+                    ),
+                    extra: {},
+                },
+            ],
+            cairo_plugins: [
+                CompilationUnitCairoPluginMetadata {
+                    package: PackageId {
+                        repr: "starknet 2.6.4 (std)",
+                    },
+                    extra: {},
+                },
+                CompilationUnitCairoPluginMetadata {
+                    package: PackageId {
+                        repr: "test_plugin 2.6.4 (std)",
+                    },
+                    extra: {},
+                },
+            ],
+            cfg: [
+                KV(
+                    "target",
+                    "test",
+                ),
+                Name(
+                    "test",
+                ),
+            ],
+            extra: {
+                "components": Array [
+                    String("cast_addition 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)"),
+                    String("core 2.6.4 (std)"),
+                ],
+            },
+        },
+        CompilationUnitMetadata {
+            id: CompilationUnitId {
+                repr: "cast_fibonacci-pj89dd0fe5h6a",
+            },
+            package: PackageId {
+                repr: "cast_fibonacci 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/Scarb.toml)",
+            },
+            target: TargetMetadata {
+                kind: "lib",
+                name: "cast_fibonacci",
+                source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/src/lib.cairo",
+                params: Object {},
+                extra: {},
+            },
+            compiler_config: Object {
+                "allow_warnings": Bool(true),
+                "enable_gas": Bool(true),
+                "sierra_replace_ids": Bool(true),
+            },
+            components: [
+                CompilationUnitComponentMetadata {
+                    package: PackageId {
+                        repr: "cast_addition 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)",
+                    },
+                    name: "cast_addition",
+                    source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/src/lib.cairo",
+                    cfg: None,
+                    extra: {},
+                },
+                CompilationUnitComponentMetadata {
+                    package: PackageId {
+                        repr: "cast_fibonacci 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/Scarb.toml)",
+                    },
+                    name: "cast_fibonacci",
+                    source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/src/lib.cairo",
+                    cfg: None,
+                    extra: {},
+                },
+                CompilationUnitComponentMetadata {
+                    package: PackageId {
+                        repr: "core 2.6.4 (std)",
+                    },
+                    name: "core",
+                    source_path: "/Users/rohit/Library/Caches/com.swmansion.scarb/registry/std/v2.6.4/core/src/lib.cairo",
+                    cfg: None,
+                    extra: {},
+                },
+            ],
+            cairo_plugins: [
+                CompilationUnitCairoPluginMetadata {
+                    package: PackageId {
+                        repr: "starknet 2.6.4 (std)",
+                    },
+                    extra: {},
+                },
+            ],
+            cfg: [
+                KV(
+                    "target",
+                    "lib",
+                ),
+            ],
+            extra: {
+                "components": Array [
+                    String("cast_addition 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)"),
+                    String("cast_fibonacci 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/Scarb.toml)"),
+                    String("core 2.6.4 (std)"),
+                ],
+            },
+        },
+        CompilationUnitMetadata {
+            id: CompilationUnitId {
+                repr: "cast_fibonacci-lk8hp8d874f2k",
+            },
+            package: PackageId {
+                repr: "cast_fibonacci 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/Scarb.toml)",
+            },
+            target: TargetMetadata {
+                kind: "starknet-contract",
+                name: "cast_fibonacci",
+                source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/src/lib.cairo",
+                params: Object {
+                    "build-external-contracts": Array [
+                        String("cast_addition::AdditionContract"),
+                    ],
+                },
+                extra: {},
+            },
+            compiler_config: Object {
+                "allow_warnings": Bool(true),
+                "enable_gas": Bool(true),
+                "sierra_replace_ids": Bool(true),
+            },
+            components: [
+                CompilationUnitComponentMetadata {
+                    package: PackageId {
+                        repr: "cast_addition 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)",
+                    },
+                    name: "cast_addition",
+                    source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/src/lib.cairo",
+                    cfg: None,
+                    extra: {},
+                },
+                CompilationUnitComponentMetadata {
+                    package: PackageId {
+                        repr: "cast_fibonacci 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/Scarb.toml)",
+                    },
+                    name: "cast_fibonacci",
+                    source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/src/lib.cairo",
+                    cfg: None,
+                    extra: {},
+                },
+                CompilationUnitComponentMetadata {
+                    package: PackageId {
+                        repr: "core 2.6.4 (std)",
+                    },
+                    name: "core",
+                    source_path: "/Users/rohit/Library/Caches/com.swmansion.scarb/registry/std/v2.6.4/core/src/lib.cairo",
+                    cfg: None,
+                    extra: {},
+                },
+            ],
+            cairo_plugins: [
+                CompilationUnitCairoPluginMetadata {
+                    package: PackageId {
+                        repr: "starknet 2.6.4 (std)",
+                    },
+                    extra: {},
+                },
+            ],
+            cfg: [
+                KV(
+                    "target",
+                    "starknet-contract",
+                ),
+            ],
+            extra: {
+                "components": Array [
+                    String("cast_addition 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)"),
+                    String("cast_fibonacci 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/Scarb.toml)"),
+                    String("core 2.6.4 (std)"),
+                ],
+            },
+        },
+        CompilationUnitMetadata {
+            id: CompilationUnitId {
+                repr: "cast_fibonacci-9ijl61fc9b00e",
+            },
+            package: PackageId {
+                repr: "cast_fibonacci 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/Scarb.toml)",
+            },
+            target: TargetMetadata {
+                kind: "test",
+                name: "cast_fibonacci_unittest",
+                source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/src/lib.cairo",
+                params: Object {
+                    "test-type": String("unit"),
+                },
+                extra: {},
+            },
+            compiler_config: Object {
+                "allow_warnings": Bool(true),
+                "enable_gas": Bool(true),
+                "sierra_replace_ids": Bool(true),
+            },
+            components: [
+                CompilationUnitComponentMetadata {
+                    package: PackageId {
+                        repr: "cast_addition 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)",
+                    },
+                    name: "cast_addition",
+                    source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/src/lib.cairo",
+                    cfg: Some(
+                        [
+                            KV(
+                                "target",
+                                "test",
+                            ),
+                        ],
+                    ),
+                    extra: {},
+                },
+                CompilationUnitComponentMetadata {
+                    package: PackageId {
+                        repr: "cast_fibonacci 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/Scarb.toml)",
+                    },
+                    name: "cast_fibonacci",
+                    source_path: "/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/src/lib.cairo",
+                    cfg: None,
+                    extra: {},
+                },
+                CompilationUnitComponentMetadata {
+                    package: PackageId {
+                        repr: "core 2.6.4 (std)",
+                    },
+                    name: "core",
+                    source_path: "/Users/rohit/Library/Caches/com.swmansion.scarb/registry/std/v2.6.4/core/src/lib.cairo",
+                    cfg: Some(
+                        [
+                            KV(
+                                "target",
+                                "test",
+                            ),
+                        ],
+                    ),
+                    extra: {},
+                },
+            ],
+            cairo_plugins: [
+                CompilationUnitCairoPluginMetadata {
+                    package: PackageId {
+                        repr: "starknet 2.6.4 (std)",
+                    },
+                    extra: {},
+                },
+                CompilationUnitCairoPluginMetadata {
+                    package: PackageId {
+                        repr: "test_plugin 2.6.4 (std)",
+                    },
+                    extra: {},
+                },
+            ],
+            cfg: [
+                KV(
+                    "target",
+                    "test",
+                ),
+                Name(
+                    "test",
+                ),
+            ],
+            extra: {
+                "components": Array [
+                    String("cast_addition 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)"),
+                    String("cast_fibonacci 0.1.0 (path+file:///Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_fibonacci/Scarb.toml)"),
+                    String("core 2.6.4 (std)"),
+                ],
+            },
+        },
+    ],
+    current_profile: "dev",
+    profiles: [
+        "dev",
+        "release",
+    ],
+    extra: {},
+}
+   Compiling lib(cast_addition) cast_addition v0.1.0 (/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)
+   Compiling starknet-contract(cast_addition) cast_addition v0.1.0 (/Users/rohit/nmd/starknet-foundry/crates/sncast/tests/data/contracts/virtual_workspace/crates/cast_addition/Scarb.toml)
+    Finished release target(s) in 2 seconds
+[?2004h[0KYou are about to submit the entire workspace's code to the third-party chosen verifier at walnut, and the code will be publicly available through walnut's APIs. Are you sure? (Y/n): [22C[?2004l

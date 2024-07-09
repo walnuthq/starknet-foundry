@@ -135,10 +135,15 @@ impl VerificationInterface for WalnutVerificationInterface {
         contract_address: FieldElement,
         contract_name: String,
     ) -> Result<VerifyResponse> {
+
+        println!("Verifying contract {contract_name} at address {contract_address}");
+
         // Read all files name along with their contents in a JSON format
         // in the workspace dir recursively
         // key is the file name and value is the file content
         let mut file_data = serde_json::Map::new();
+
+        println!("directory: {0}", self.workspace_dir);
 
         // Recursively read files and their contents in workspace directory
         for entry in WalkDir::new(self.workspace_dir.clone()).follow_links(true) {

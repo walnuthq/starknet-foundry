@@ -1,0 +1,5 @@
+
+[sncast.account1]
+account = "account2"
+accounts-file = "/Users/rohit/.starknet_accounts/starknet_open_zeppelin_accounts.json"
+url = "https://free-rpc.nethermind.io/sepolia-juno"
