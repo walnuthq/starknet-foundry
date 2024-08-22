@@ -14,8 +14,8 @@ use flate2::read::GzDecoder;
 use num_bigint::BigUint;
 use runtime::starknet::context::SerializableGasPrices;
 use starknet::core::types::{
-    BlockId, ContractClass as ContractClassStarknet, FieldElement, MaybePendingBlockWithTxHashes,
-    StarknetError,
+    BlockId, ContractClass as ContractClassStarknet, ContractStorageDiffItem, FieldElement,
+    MaybePendingBlockWithTxHashes, StarknetError, TransactionTrace,
 };
 use starknet::providers::jsonrpc::HttpTransport;
 use starknet::providers::{JsonRpcClient, Provider, ProviderError};
@@ -40,15 +40,34 @@ pub struct ForkStateReader {
 }
 
 impl ForkStateReader {
-    pub fn new(url: Url, block_number: BlockNumber, cache_dir: &str) -> Result<Self> {
-        Ok(ForkStateReader {
-            cache: RefCell::new(
-                ForkCache::load_or_new(&url, block_number, cache_dir)
-                    .context("Could not create fork cache")?,
-            ),
-            client: JsonRpcClient::new(HttpTransport::new(url)),
+    pub fn new(
+        url: Url,
+        block_number: BlockNumber,
+        transaction_index: usize,
+        cache_dir: &str,
+    ) -> Result<Self> {
+        let mut fork_cache = ForkCache::default();
+        let mut fork_state_reader = ForkStateReader {
+            cache: RefCell::new(fork_cache),
+            client: JsonRpcClient::new(HttpTransport::new(url.clone())),
             block_number,
-        })
+        };
+
+        //Get over all transaction till transaction_index and store new storage values in
+        //fork_cache_content
+        fork_state_reader.get_transactions_storage_diff(
+            BlockId::Number(block_number.0 + 1),
+            transaction_index,
+        )?;
+
+        //load new fork_cache with updated fork_cache_content
+        fork_cache = ForkCache::load_or_new(&url, block_number, cache_dir)
+            .context("Could not load fork cache")?;
+
+        fork_state_reader.cache = RefCell::new(fork_cache);
+
+        // Return the initialized and state updated ForkStateReader
+        Ok(fork_state_reader)
     }
 
     fn block_id(&self) -> BlockId {
@@ -63,6 +82,86 @@ impl ForkStateReader {
             .borrow()
             .get_compiled_contract_class(&class_hash)
             .cloned()
+    }
+
+    pub fn get_transactions_storage_diff(
+        &self,
+        block_id: BlockId,
+        transaction_index: usize,
+    ) -> Result<(), StateError> {
+        let results = tokio::task::block_in_place(|| {
+            tokio::runtime::Handle::current()
+                .block_on(self.client.trace_block_transactions(block_id))
+        })
+        .map_err(|_| {
+            StateError::StateReadError("Failed to trace block transactions".to_string())
+        })?;
+
+        for (index, result) in results.into_iter().enumerate() {
+            if index != transaction_index {
+                match result.trace_root {
+                    TransactionTrace::Invoke(invoke_trace) => {
+                        if let Some(state_diff) = invoke_trace.state_diff {
+                            let contract_storage_diff = state_diff.storage_diffs;
+                            // Process the storage differences and update cache storage content
+                            self.process_storage_diffs(&contract_storage_diff)?;
+                        }
+                        return Ok(());
+                    }
+                    TransactionTrace::Declare(_) => {
+                        //TODO implement for Declare tx
+                        return Ok(());
+                    }
+                    TransactionTrace::DeployAccount(_) => {
+                        return Err(StateError::StateReadError(
+                            "DeployAccount account trace not found".to_string(),
+                        ));
+                    }
+                    TransactionTrace::L1Handler(_) => {
+                        return Err(StateError::StateReadError(
+                            "L1Handler trace not found".to_string(),
+                        ));
+                    }
+                }
+            }
+        }
+
+        Err(StateError::StateReadError(
+            "Transactions trace not found".to_string(),
+        ))
+    }
+
+    fn process_storage_diffs(
+        &self,
+        storage_diffs: &[ContractStorageDiffItem],
+    ) -> Result<(), StateError> {
+        for storage_diff in storage_diffs.iter() {
+            let contract_address = &storage_diff.address;
+
+            for storage_entry in storage_diff.storage_entries.iter() {
+                let key = StorageKey::try_from(StarkFelt::from(storage_entry.key))?;
+                let new_value: StarkFelt = storage_entry.value.into_();
+                let contract_address: ContractAddress =
+                    ContractAddress::try_from(StarkFelt::from(*contract_address))?;
+
+                match self.get_storage_at(contract_address, key) {
+                    Ok(current_value) => {
+                        if current_value != new_value {
+                            self.cache.borrow_mut().cache_get_storage_at(
+                                contract_address,
+                                key,
+                                new_value,
+                            );
+                        }
+                    }
+                    Err(e) => {
+                        return Err(e);
+                    }
+                }
+            }
+        }
+
+        Ok(())
     }
 }
 

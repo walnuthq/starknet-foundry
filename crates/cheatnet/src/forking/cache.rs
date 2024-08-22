@@ -81,7 +81,7 @@ impl ToString for ForkCacheContent {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ForkCache {
     fork_cache_content: ForkCacheContent,
     cache_file: Utf8PathBuf,
@@ -89,7 +89,9 @@ pub struct ForkCache {
 
 impl Drop for ForkCache {
     fn drop(&mut self) {
-        self.save();
+        if !self.cache_file.as_str().is_empty() {
+            self.save();
+        }
     }
 }
 
