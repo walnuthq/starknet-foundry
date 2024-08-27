@@ -89,9 +89,7 @@ pub struct ForkCache {
 
 impl Drop for ForkCache {
     fn drop(&mut self) {
-        if !self.cache_file.as_str().is_empty() {
-            self.save();
-        }
+        self.save();
     }
 }
 
