@@ -138,9 +138,6 @@ impl ForkStateReader {
                 let key = StorageKey::try_from(StarkFelt::from(storage_entry.key)).unwrap();
                 let new_value: StarkFelt = storage_entry.value.into_();
                 contract_storage.insert(key, new_value);
-                //                self.cache
-                //                    .borrow_mut()
-                //                    .cache_get_storage_at(contract_address, key, new_value);
             }
         }
     }
@@ -217,7 +214,7 @@ impl StateReader for ForkStateReader {
             }
         }
 
-        // Thrird ping provider
+        // Third ping provider
         match tokio::task::block_in_place(|| {
             tokio::runtime::Handle::current().block_on(self.client.get_storage_at(
                 FieldElement::from_(contract_address),
