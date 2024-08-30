@@ -47,7 +47,7 @@ impl ForkStateReader {
         transaction_index: usize,
         cache_dir: &str,
     ) -> Result<Self> {
-        let mut fork_cache = ForkCache::load_or_new(&url, block_number, cache_dir)
+        let fork_cache = ForkCache::load_or_new(&url, block_number, cache_dir)
             .context("Could not load fork cache")?;
         let mut fork_state_reader = ForkStateReader {
             cache: RefCell::new(fork_cache),
@@ -56,13 +56,17 @@ impl ForkStateReader {
             storage_diff: HashMap::new(),
         };
 
-        //Get over all transaction till transaction_index and store new storage values in
-        //storage_diff hash map
-        fork_state_reader.get_transactions_storage_diff(
-            BlockId::Number(block_number.0 + 1),
-            transaction_index,
-        )?;
-
+        let real_block_id = BlockId::Number(block_number.0 + 1);
+        let tx_in_block = fork_state_reader
+            .get_block_transaction_count(real_block_id)
+            .context("Unable to get block transactions count from node provider")?;
+        if tx_in_block > 1 {
+            //Get over all transaction till transaction_index and store new storage values in
+            //storage_diff hash map
+            fork_state_reader
+                .get_transactions_storage_diff(real_block_id, transaction_index)
+                .context("Unable to get trace block transactions from node provider")?;
+        }
         // Return the initialized and state updated ForkStateReader
         Ok(fork_state_reader)
     }
@@ -81,6 +85,20 @@ impl ForkStateReader {
             .cloned()
     }
 
+    pub fn get_block_transaction_count(&self, block_id: BlockId) -> Result<u64, StateError> {
+        let result = tokio::task::block_in_place(|| {
+            tokio::runtime::Handle::current()
+                .block_on(self.client.get_block_transaction_count(block_id))
+        })
+        .map_err(|err| {
+            StateError::StateReadError(format!(
+                "Unable to get block transactions count from fork ({err})"
+            ))
+        })?;
+
+        Ok(result)
+    }
+
     pub fn get_transactions_storage_diff(
         &mut self,
         block_id: BlockId,
@@ -90,8 +108,10 @@ impl ForkStateReader {
             tokio::runtime::Handle::current()
                 .block_on(self.client.trace_block_transactions(block_id))
         })
-        .map_err(|_| {
-            StateError::StateReadError("Failed to trace block transactions".to_string())
+        .map_err(|err| {
+            StateError::StateReadError(format!(
+                "Unable to get trace block transactions from fork ({err})"
+            ))
         })?;
 
         for (index, result) in results.into_iter().enumerate() {
