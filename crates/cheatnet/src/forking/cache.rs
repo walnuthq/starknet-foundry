@@ -81,7 +81,7 @@ impl ToString for ForkCacheContent {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ForkCache {
     fork_cache_content: ForkCacheContent,
     cache_file: Utf8PathBuf,
