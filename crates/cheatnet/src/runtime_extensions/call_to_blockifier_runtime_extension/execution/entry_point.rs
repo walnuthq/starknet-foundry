@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use super::cairo1_execution::execute_entry_point_call_cairo1;
+use super::WalnutEntryPointExecutionError;
 use crate::runtime_extensions::call_to_blockifier_runtime_extension::execution::deprecated::cairo0_execution::execute_entry_point_call_cairo0;
 use crate::runtime_extensions::call_to_blockifier_runtime_extension::CheatnetState;
 use crate::state::{CallTrace, CallTraceNode, CheatStatus};
@@ -32,6 +33,7 @@ use conversions::FromConv;
 use crate::runtime_extensions::call_to_blockifier_runtime_extension::rpc::{AddressOrClassHash, CallResult};
 use crate::runtime_extensions::common::sum_syscall_counters;
 use conversions::string::TryFromHexStr;
+use starknet::core::types::Felt;
 
 // blockifier/src/execution/entry_point.rs:180 (CallEntryPoint::execute)
 #[allow(clippy::too_many_lines)]
@@ -77,6 +79,7 @@ pub fn execute_call_entry_point(
                     ret_data: ret_data_f252,
                 },
                 &[],
+                None,
                 None,
             );
             return Ok(mocked_call_info(entry_point.clone(), ret_data.clone()));
@@ -129,7 +132,8 @@ pub fn execute_call_entry_point(
             cheatnet_state,
             resources,
             context,
-        ),
+        )
+        .map_err(WalnutEntryPointExecutionError::from),
         ContractClass::V1(contract_class) => execute_entry_point_call_cairo1(
             entry_point.clone(),
             &contract_class,
@@ -142,7 +146,7 @@ pub fn execute_call_entry_point(
 
     // region: Modified blockifier code
     match result {
-        Ok((call_info, syscall_counter, vm_trace)) => {
+        Ok((call_info, syscall_counter, vm_trace, vm_memory)) => {
             remove_syscall_resources_and_exit_success_call(
                 &call_info,
                 &syscall_counter,
@@ -150,12 +154,32 @@ pub fn execute_call_entry_point(
                 resources,
                 cheatnet_state,
                 vm_trace,
+                vm_memory,
             );
             Ok(call_info)
         }
         Err(err) => {
-            exit_error_call(&err, cheatnet_state, resources, entry_point);
-            Err(err)
+            match err {
+                WalnutEntryPointExecutionError::EntryPointExecutionErrorWithTraceAndMemory {
+                    error,
+                    vm_trace,
+                    vm_memory,
+                } => {
+                    exit_error_call(
+                        &error,
+                        cheatnet_state,
+                        resources,
+                        entry_point,
+                        vm_trace,
+                        Some(vm_memory),
+                    );
+                    Err(error)
+                }
+                WalnutEntryPointExecutionError::EntryPointExecutionError(error) => {
+                    exit_error_call(&error, cheatnet_state, resources, entry_point, None, None);
+                    Err(error)
+                }
+            }
         }
     }
     // endregion
@@ -168,6 +192,7 @@ fn remove_syscall_resources_and_exit_success_call(
     resources: &mut ExecutionResources,
     cheatnet_state: &mut CheatnetState,
     vm_trace: Option<Vec<RelocatedTraceEntry>>,
+    vm_memory: Option<Vec<Option<Felt>>>,
 ) {
     let versioned_constants = context.tx_context.block_context.versioned_constants();
     // We don't want the syscall resources to pollute the results
@@ -183,6 +208,7 @@ fn remove_syscall_resources_and_exit_success_call(
         CallResult::from_success(call_info),
         &call_info.execution.l2_to_l1_messages,
         vm_trace,
+        vm_memory,
     );
 }
 
@@ -191,6 +217,8 @@ fn exit_error_call(
     cheatnet_state: &mut CheatnetState,
     resources: &mut ExecutionResources,
     entry_point: &CallEntryPoint,
+    vm_trace: Option<Vec<RelocatedTraceEntry>>,
+    vm_memory: Option<Vec<Option<Felt>>>,
 ) {
     let identifier = match entry_point.call_type {
         CallType::Call => AddressOrClassHash::ContractAddress(entry_point.storage_address),
@@ -201,7 +229,8 @@ fn exit_error_call(
         Default::default(),
         CallResult::from_err(error, &identifier),
         &[],
-        None,
+        vm_trace,
+        vm_memory,
     );
 }
 

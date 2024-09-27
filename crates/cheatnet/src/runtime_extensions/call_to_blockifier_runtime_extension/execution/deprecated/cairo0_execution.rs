@@ -18,6 +18,7 @@ use blockifier::state::state_api::State;
 use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use cairo_vm::vm::runners::cairo_runner::{CairoArg, CairoRunner, ExecutionResources};
 use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
+use starknet::core::types::Felt;
 
 // blockifier/src/execution/deprecated_execution.rs:36 (execute_entry_point_call)
 pub fn execute_entry_point_call_cairo0(
@@ -27,7 +28,12 @@ pub fn execute_entry_point_call_cairo0(
     cheatnet_state: &mut CheatnetState,
     resources: &mut ExecutionResources,
     context: &mut EntryPointExecutionContext,
-) -> EntryPointExecutionResult<(CallInfo, SyscallCounter, Option<Vec<RelocatedTraceEntry>>)> {
+) -> EntryPointExecutionResult<(
+    CallInfo,
+    SyscallCounter,
+    Option<Vec<RelocatedTraceEntry>>,
+    Option<Vec<Option<Felt>>>,
+)> {
     let VmExecutionContext {
         mut runner,
         mut syscall_handler,
@@ -78,7 +84,7 @@ pub fn execute_entry_point_call_cairo0(
         n_total_args,
     )?;
 
-    Ok((execution_result, syscall_counter, None))
+    Ok((execution_result, syscall_counter, None, None))
     // endregion
 }
 

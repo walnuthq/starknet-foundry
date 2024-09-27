@@ -23,6 +23,8 @@ license = "MIT"
 license-file = "LICENSE"
 
 [workspace.dependencies]
+# blockifier = { git = "https://github.com/starkware-libs/sequencer", rev = "9e02307ff0694cd4e5f4f608582c70536fc16624" }
+# blockifier = { path = "../walnut-sequencer/crates/blockifier" }
 blockifier = "0.8.0-rc.3"
 starknet_api = "0.13.0-dev.7"
 cairo-lang-casm = { version = "2.7.0", features = ["serde"] }

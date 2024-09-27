@@ -9,7 +9,7 @@ use blockifier::execution::entry_point_execution::{
 use blockifier::{
     execution::{
         contract_class::{ContractClassV1, EntryPointV1},
-        entry_point::{CallEntryPoint, EntryPointExecutionContext, EntryPointExecutionResult},
+        entry_point::{CallEntryPoint, EntryPointExecutionContext},
         errors::EntryPointExecutionError,
         execution_utils::Args,
     },
@@ -22,6 +22,9 @@ use cairo_vm::{
     vm::runners::cairo_runner::{CairoArg, CairoRunner, ExecutionResources},
 };
 use runtime::{ExtendedRuntime, StarknetRuntime};
+use starknet::core::types::Felt;
+
+use super::{WalnutEntryPointExecutionError, WalnutEntryPointExecutionResult};
 
 // blockifier/src/execution/cairo1_execution.rs:48 (execute_entry_point_call)
 pub fn execute_entry_point_call_cairo1(
@@ -31,14 +34,20 @@ pub fn execute_entry_point_call_cairo1(
     cheatnet_state: &mut CheatnetState, // Added parameter
     resources: &mut ExecutionResources,
     context: &mut EntryPointExecutionContext,
-) -> EntryPointExecutionResult<(CallInfo, SyscallCounter, Option<Vec<RelocatedTraceEntry>>)> {
+) -> WalnutEntryPointExecutionResult<(
+    CallInfo,
+    SyscallCounter,
+    Option<Vec<RelocatedTraceEntry>>,
+    Option<Vec<Option<Felt>>>,
+)> {
     let VmExecutionContext {
         mut runner,
         mut syscall_handler,
         initial_syscall_ptr,
         entry_point,
         program_extra_data_length,
-    } = initialize_execution_context(call, contract_class, state, resources, context)?;
+    } = initialize_execution_context(call, contract_class, state, resources, context)
+        .map_err(EntryPointExecutionError::from)?;
 
     let args = prepare_call_arguments(
         &syscall_handler.call,
@@ -46,7 +55,8 @@ pub fn execute_entry_point_call_cairo1(
         initial_syscall_ptr,
         &mut syscall_handler.read_only_segments,
         &entry_point,
-    )?;
+    )
+    .map_err(EntryPointExecutionError::from)?;
     let n_total_args = args.len();
 
     // Snapshot the VM resources, in order to calculate the usage of this run at the end.
@@ -62,13 +72,13 @@ pub fn execute_entry_point_call_cairo1(
     };
 
     // Execute.
-    cheatable_run_entry_point(
+    let err = cheatable_run_entry_point(
         &mut runner,
         &mut cheatable_runtime,
         &entry_point,
         &args,
         program_extra_data_length,
-    )?;
+    );
 
     let vm_trace = if cheatable_runtime
         .extension
@@ -80,6 +90,27 @@ pub fn execute_entry_point_call_cairo1(
     } else {
         None
     };
+
+    let vm_memory = runner.relocated_memory.clone();
+
+    match err {
+        Ok(_) => {}
+        Err(err) => {
+            match err {
+                EntryPointExecutionError::CairoRunError(_) => {
+                    return Err(WalnutEntryPointExecutionError::EntryPointExecutionErrorWithTraceAndMemory {
+                    error: err,
+                    vm_trace,
+                    vm_memory,
+                });
+                }
+                _ => {
+                    return Err(WalnutEntryPointExecutionError::from(err));
+                }
+            }
+        }
+    }
+
     let syscall_counter = cheatable_runtime
         .extended_runtime
         .hint_handler
@@ -92,14 +123,21 @@ pub fn execute_entry_point_call_cairo1(
         previous_vm_resources,
         n_total_args,
         program_extra_data_length,
-    )?;
+    )
+    .map_err(EntryPointExecutionError::from)?;
     if call_info.execution.failed {
-        return Err(EntryPointExecutionError::ExecutionFailed {
-            error_data: call_info.execution.retdata.0,
-        });
+        return Err(
+            WalnutEntryPointExecutionError::EntryPointExecutionErrorWithTraceAndMemory {
+                error: EntryPointExecutionError::ExecutionFailed {
+                    error_data: call_info.execution.retdata.0,
+                },
+                vm_trace,
+                vm_memory,
+            },
+        );
     }
 
-    Ok((call_info, syscall_counter, vm_trace))
+    Ok((call_info, syscall_counter, vm_trace, Some(vm_memory)))
     // endregion
 }
 
