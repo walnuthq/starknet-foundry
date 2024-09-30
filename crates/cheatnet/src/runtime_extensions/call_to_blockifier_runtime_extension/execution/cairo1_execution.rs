@@ -155,18 +155,20 @@ pub fn cheatable_run_entry_point(
     // endregion
     let args: Vec<&CairoArg> = args.iter().collect();
 
-    runner.run_from_entrypoint(
+    let result = runner.run_from_entrypoint(
         entry_point.pc(),
         &args,
         verify_secure,
         Some(program_segment_size),
         hint_processor,
-    )?;
+    );
 
     // region: Modified blockifier code
     // Relocate trace to then collect it
     runner.relocate(true).map_err(CairoRunError::from)?;
     // endregion
+
+    result?;
 
     Ok(())
 }
