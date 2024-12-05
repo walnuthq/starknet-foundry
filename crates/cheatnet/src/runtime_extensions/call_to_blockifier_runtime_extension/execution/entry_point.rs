@@ -91,9 +91,13 @@ pub fn execute_call_entry_point(
     let storage_address = entry_point.storage_address;
     let storage_class_hash = state.get_class_hash_at(entry_point.storage_address)?;
     if storage_class_hash == ClassHash::default() {
-        return Err(
-            PreExecutionError::UninitializedStorageAddress(entry_point.storage_address).into(),
+        let error = EntryPointExecutionError::PreExecutionError(
+            PreExecutionError::UninitializedStorageAddress(entry_point.storage_address),
         );
+        // Update the cheatnet_state with the error so that the call trace is displayed with error
+        // when the contract is not deployed
+        exit_error_call(&error, cheatnet_state, resources, entry_point, None, None);
+        return Err(error);
     }
     let maybe_replacement_class = cheatnet_state
         .replaced_bytecode_contracts
@@ -158,29 +162,27 @@ pub fn execute_call_entry_point(
             );
             Ok(call_info)
         }
-        Err(err) => {
-            match err {
-                WalnutEntryPointExecutionError::EntryPointExecutionErrorWithTraceAndMemory {
-                    error,
+        Err(err) => match err {
+            WalnutEntryPointExecutionError::EntryPointExecutionErrorWithTraceAndMemory {
+                error,
+                vm_trace,
+                vm_memory,
+            } => {
+                exit_error_call(
+                    &error,
+                    cheatnet_state,
+                    resources,
+                    entry_point,
                     vm_trace,
-                    vm_memory,
-                } => {
-                    exit_error_call(
-                        &error,
-                        cheatnet_state,
-                        resources,
-                        entry_point,
-                        vm_trace,
-                        Some(vm_memory),
-                    );
-                    Err(error)
-                }
-                WalnutEntryPointExecutionError::EntryPointExecutionError(error) => {
-                    exit_error_call(&error, cheatnet_state, resources, entry_point, None, None);
-                    Err(error)
-                }
+                    Some(vm_memory),
+                );
+                Err(error)
             }
-        }
+            WalnutEntryPointExecutionError::EntryPointExecutionError(error) => {
+                exit_error_call(&error, cheatnet_state, resources, entry_point, None, None);
+                Err(error)
+            }
+        },
     }
     // endregion
 }
