@@ -15,8 +15,9 @@ use blockifier::execution::{
 use blockifier::state::errors::StateError;
 use cairo_vm::vm::runners::cairo_runner::ExecutionResources;
 use conversions::{
-    IntoConv, byte_array::ByteArray, serde::serialize::CairoSerialize, string::IntoHexStr,
+    byte_array::ByteArray, serde::serialize::CairoSerialize, string::IntoHexStr, IntoConv,
 };
+use serde::Serialize;
 use shared::utils::build_readable_text;
 use starknet_api::execution_resources::GasAmount;
 use starknet_api::{
@@ -37,7 +38,7 @@ pub struct UsedResources {
 }
 
 /// Enum representing possible call execution result, along with the data
-#[derive(Debug, Clone, CairoSerialize)]
+#[derive(Debug, Clone, CairoSerialize, Serialize)]
 pub enum CallResult {
     Success { ret_data: Vec<Felt> },
     Failure(CallFailure),
@@ -46,7 +47,7 @@ pub enum CallResult {
 /// Enum representing possible call failure and its type.
 /// `Panic` - Recoverable, meant to be caught by the user.
 /// `Error` - Unrecoverable, equivalent of panic! in rust.
-#[derive(Debug, Clone, CairoSerialize)]
+#[derive(Debug, Clone, CairoSerialize, Serialize)]
 pub enum CallFailure {
     Panic { panic_data: Vec<Felt> },
     Error { msg: ByteArray },

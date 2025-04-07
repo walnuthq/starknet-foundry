@@ -1,21 +1,26 @@
-use crate::runtime_extensions::call_to_blockifier_runtime_extension::CheatnetState;
 use crate::runtime_extensions::call_to_blockifier_runtime_extension::execution::entry_point::{
     ContractClassEntryPointExecutionResult, OnErrorLastPc,
 };
-use crate::runtime_extensions::deprecated_cheatable_starknet_extension::DeprecatedCheatableStarknetRuntimeExtension;
+use crate::runtime_extensions::call_to_blockifier_runtime_extension::CheatnetState;
 use crate::runtime_extensions::deprecated_cheatable_starknet_extension::runtime::{
     DeprecatedExtendedRuntime, DeprecatedStarknetRuntime,
 };
+use crate::runtime_extensions::deprecated_cheatable_starknet_extension::DeprecatedCheatableStarknetRuntimeExtension;
+use blockifier::execution::call_info::CallInfo;
 use blockifier::execution::contract_class::CompiledClassV0;
 use blockifier::execution::deprecated_entry_point_execution::{
-    VmExecutionContext, finalize_execution, initialize_execution_context, prepare_call_arguments,
+    finalize_execution, initialize_execution_context, prepare_call_arguments, VmExecutionContext,
 };
-use blockifier::execution::entry_point::{EntryPointExecutionContext, ExecutableCallEntryPoint};
+use blockifier::execution::entry_point::{
+    EntryPointExecutionContext, EntryPointExecutionResult, ExecutableCallEntryPoint,
+};
 use blockifier::execution::errors::EntryPointExecutionError;
 use blockifier::execution::execution_utils::Args;
+use blockifier::execution::syscalls::hint_processor::SyscallUsageMap;
 use blockifier::state::state_api::State;
 use cairo_vm::hint_processor::hint_processor_definition::HintProcessor;
 use cairo_vm::vm::runners::cairo_runner::{CairoArg, CairoRunner};
+use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use starknet::core::types::Felt;
 
 // blockifier/src/execution/deprecated_execution.rs:36 (execute_entry_point_call)
@@ -27,7 +32,7 @@ pub fn execute_entry_point_call_cairo0(
     context: &mut EntryPointExecutionContext,
 ) -> EntryPointExecutionResult<(
     CallInfo,
-    SyscallCounter,
+    SyscallUsageMap,
     Option<Vec<RelocatedTraceEntry>>,
     Option<Vec<Option<Felt>>>,
 )> {
@@ -61,8 +66,8 @@ pub fn execute_entry_point_call_cairo0(
         &mut cheatable_syscall_handler,
         entry_point_pc,
         &args,
-    )
-    .on_error_get_last_pc(&mut runner)?;
+    )?;
+    //.on_error_get_last_pc(&mut runner)?;
 
     let syscall_usage = cheatable_syscall_handler
         .extended_runtime

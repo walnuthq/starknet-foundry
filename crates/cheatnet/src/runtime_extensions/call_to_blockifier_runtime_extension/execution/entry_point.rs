@@ -35,16 +35,11 @@ use std::rc::Rc;
 use blockifier::execution::entry_point::ExecutableCallEntryPoint;
 use thiserror::Error;
 use conversions::FromConv;
-use crate::runtime_extensions::call_to_blockifier_runtime_extension::rpc::{AddressOrClassHash, CallResult};
-use crate::runtime_extensions::common::sum_syscall_counters;
-use conversions::string::TryFromHexStr;
-use starknet::core::types::Felt;
 
 pub(crate) type ContractClassEntryPointExecutionResult = Result<
     (CallInfo, SyscallUsageMap, Option<Vec<RelocatedTraceEntry>>),
-    EntryPointExecutionErrorWithTrace,
+    EntryPointExecutionErrorWithTraceAndMemory,
 >;
-
 
 // blockifier/src/execution/entry_point.rs:180 (CallEntryPoint::execute)
 #[expect(clippy::too_many_lines)]
@@ -111,7 +106,19 @@ pub fn execute_call_entry_point(
         );
         // Update the cheatnet_state with the error so that the call trace is displayed with error
         // when the contract is not deployed
-        exit_error_call(&error, cheatnet_state, resources, entry_point, None, None);
+        let executable_entry_point = ExecutableCallEntryPoint {
+            class_hash: storage_class_hash,
+            code_address: entry_point.code_address,
+            entry_point_type: entry_point.entry_point_type,
+            entry_point_selector: entry_point.entry_point_selector,
+            calldata: entry_point.calldata.clone(),
+            storage_address: entry_point.storage_address,
+            caller_address: entry_point.caller_address,
+            call_type: entry_point.call_type,
+            initial_gas: entry_point.initial_gas,
+        };
+
+        exit_error_call(&error, cheatnet_state, &executable_entry_point, None, None);
         return Err(error);
     }
     let maybe_replacement_class = cheatnet_state
@@ -186,32 +193,32 @@ pub fn execute_call_entry_point(
             Ok(call_info)
         }
         Err(err) => match err {
-            WalnutEntryPointExecutionError::EntryPointExecutionErrorWithTraceAndMemory {
-                error,
-                vm_trace,
-                vm_memory,
-            } => {
-                if let Some(pc) = trace
-                .as_ref()
-                .and_then(|trace| trace.last())
-                .map(|entry| entry.pc)
-            {
-                cheatnet_state
-                    .encountered_errors
-                    .push(EncounteredError { pc, class_hash });
-            }
+            WalnutEntryPointExecutionError::EntryPointExecutionErrorWithTraceAndMemory(
+                EntryPointExecutionErrorWithTraceAndMemory {
+                    source: err,
+                    trace: vm_trace,
+                    memory: vm_memory,
+                },
+            ) => {
+                if let Some(trace_entries) = vm_trace.as_ref() {
+                    if let Some(last_entry) = trace_entries.last() {
+                        cheatnet_state.encountered_errors.push(EncounteredError {
+                            pc: last_entry.pc,
+                            class_hash,
+                        });
+                    }
+                }
                 exit_error_call(
-                    &error,
+                    &err,
                     cheatnet_state,
-                    resources,
-                    entry_point,
+                    &entry_point,
                     vm_trace,
                     Some(vm_memory),
                 );
-                Err(error)
+                Err(err)
             }
             WalnutEntryPointExecutionError::EntryPointExecutionError(error) => {
-                exit_error_call(&error, cheatnet_state, resources, entry_point, None, None);
+                exit_error_call(&error, cheatnet_state, &entry_point, None, None);
                 Err(error)
             }
         },
@@ -387,12 +394,13 @@ fn aggregate_syscall_usage(trace: &Rc<RefCell<CallTrace>>) -> SyscallUsageMap {
 
 #[derive(Debug, Error)]
 #[error("{}", source)]
-pub struct EntryPointExecutionErrorWithTrace {
+pub struct EntryPointExecutionErrorWithTraceAndMemory {
     pub source: EntryPointExecutionError,
     pub trace: Option<Vec<RelocatedTraceEntry>>,
+    pub memory: Vec<Option<Felt>>,
 }
 
-impl<T> From<T> for EntryPointExecutionErrorWithTrace
+impl<T> From<T> for EntryPointExecutionErrorWithTraceAndMemory
 where
     T: Into<EntryPointExecutionError>,
 {
@@ -400,6 +408,7 @@ where
         Self {
             source: value.into(),
             trace: None,
+            memory: vec![],
         }
     }
 }
@@ -408,19 +417,24 @@ pub(crate) trait OnErrorLastPc<T>: Sized {
     fn on_error_get_last_pc(
         self,
         runner: &mut CairoRunner,
-    ) -> Result<T, EntryPointExecutionErrorWithTrace>;
+    ) -> Result<T, EntryPointExecutionErrorWithTraceAndMemory>;
 }
 
 impl<T> OnErrorLastPc<T> for Result<T, EntryPointExecutionError> {
     fn on_error_get_last_pc(
         self,
         runner: &mut CairoRunner,
-    ) -> Result<T, EntryPointExecutionErrorWithTrace> {
+    ) -> Result<T, EntryPointExecutionErrorWithTraceAndMemory> {
         match self {
             Err(source) => {
                 let trace = get_relocated_vm_trace(runner);
+                let memory = runner.relocated_memory.clone();
 
-                Err(EntryPointExecutionErrorWithTrace { source, trace })
+                Err(EntryPointExecutionErrorWithTraceAndMemory {
+                    source,
+                    trace,
+                    memory,
+                })
             }
             Ok(value) => Ok(value),
         }

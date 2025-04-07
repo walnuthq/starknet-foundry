@@ -1,18 +1,21 @@
-use crate::runtime_extensions::call_to_blockifier_runtime_extension::CheatnetState;
+use crate::runtime_extensions::call_to_blockifier_runtime_extension::execution::entry_point::EntryPointExecutionErrorWithTraceAndMemory;
 use crate::runtime_extensions::call_to_blockifier_runtime_extension::execution::entry_point::{
-    ContractClassEntryPointExecutionResult, EntryPointExecutionErrorWithTrace, OnErrorLastPc,
+    ContractClassEntryPointExecutionResult, OnErrorLastPc,
 };
+use crate::runtime_extensions::call_to_blockifier_runtime_extension::CheatnetState;
 use crate::runtime_extensions::cheatable_starknet_runtime_extension::CheatableStarknetRuntimeExtension;
 use crate::runtime_extensions::common::get_relocated_vm_trace;
+use blockifier::execution::call_info::CallInfo;
 use blockifier::execution::contract_class::CompiledClassV1;
 use blockifier::execution::entry_point::ExecutableCallEntryPoint;
 use blockifier::execution::entry_point_execution::{
-    ExecutionRunnerMode, VmExecutionContext, finalize_execution,
-    initialize_execution_context_with_runner_mode, prepare_call_arguments,
+    finalize_execution, initialize_execution_context_with_runner_mode, prepare_call_arguments,
+    ExecutionRunnerMode, VmExecutionContext,
 };
 use blockifier::execution::stack_trace::{
-    Cairo1RevertHeader, extract_trailing_cairo1_revert_trace,
+    extract_trailing_cairo1_revert_trace, Cairo1RevertHeader,
 };
+use blockifier::execution::syscalls::hint_processor::SyscallUsageMap;
 use blockifier::{
     execution::{
         contract_class::EntryPointV1, entry_point::EntryPointExecutionContext,
@@ -21,6 +24,7 @@ use blockifier::{
     state::state_api::State,
 };
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
+use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
 use cairo_vm::{
     hint_processor::hint_processor_definition::HintProcessor,
     vm::runners::cairo_runner::{CairoArg, CairoRunner},
@@ -39,10 +43,10 @@ pub fn execute_entry_point_call_cairo1(
     context: &mut EntryPointExecutionContext,
 ) -> WalnutEntryPointExecutionResult<(
     CallInfo,
-    SyscallCounter,
+    SyscallUsageMap,
     Option<Vec<RelocatedTraceEntry>>,
     Option<Vec<Option<Felt>>>,
-) {
+)> {
     let tracked_resource = *context
         .tracked_resource_stack
         .last()
@@ -60,7 +64,8 @@ pub fn execute_entry_point_call_cairo1(
         state,
         context,
         ExecutionRunnerMode::Tracing,
-    )?;
+    )
+    .map_err(EntryPointExecutionError::from)?;
 
     let args = prepare_call_arguments(
         &syscall_handler.base.call,
@@ -91,36 +96,17 @@ pub fn execute_entry_point_call_cairo1(
         &args,
         program_extra_data_length,
     )
-    .on_error_get_last_pc(&mut runner)?;
+    .on_error_get_last_pc(&mut runner);
 
-    let vm_trace = if cheatable_runtime
-        .extension
-        .cheatnet_state
-        .trace_data
-        .is_vm_trace_needed
-    {
-        Some(get_relocated_vm_trace(&runner))
-    } else {
-        None
-    };
-
-    let vm_memory = runner.relocated_memory.clone();
+    let trace = get_relocated_vm_trace(&mut runner);
+    let memory = runner.relocated_memory.clone();
 
     match err {
         Ok(_) => {}
-        Err(err) => {
-            match err {
-                EntryPointExecutionError::CairoRunError(_) => {
-                    return Err(WalnutEntryPointExecutionError::EntryPointExecutionErrorWithTraceAndMemory {
-                    error: err,
-                    vm_trace,
-                    vm_memory,
-                });
-                }
-                _ => {
-                    return Err(WalnutEntryPointExecutionError::from(err));
-                }
-            }
+        Err(error) => {
+            return Err(
+                WalnutEntryPointExecutionError::EntryPointExecutionErrorWithTraceAndMemory(error),
+            );
         }
     }
 
@@ -140,20 +126,22 @@ pub fn execute_entry_point_call_cairo1(
     .map_err(EntryPointExecutionError::from)?;
     if call_info.execution.failed {
         return Err(
-            WalnutEntryPointExecutionError::EntryPointExecutionErrorWithTraceAndMemory {
-                error: EntryPointExecutionError::ExecutionFailed {
-                    error_trace: extract_trailing_cairo1_revert_trace(
-                        &call_info,
-                        Cairo1RevertHeader::Execution,
-                    ),
+            WalnutEntryPointExecutionError::EntryPointExecutionErrorWithTraceAndMemory(
+                EntryPointExecutionErrorWithTraceAndMemory {
+                    source: EntryPointExecutionError::ExecutionFailed {
+                        error_trace: extract_trailing_cairo1_revert_trace(
+                            &call_info,
+                            Cairo1RevertHeader::Execution,
+                        ),
+                    },
+                    trace,
+                    memory,
                 },
-                vm_trace,
-                vm_memory,
-            },
+            ),
         );
     }
 
-    Ok((call_info, syscall_usage_map, vm_trace, Some(vm_memory)))
+    Ok((call_info, syscall_usage_map, trace, Some(memory)))
     // endregion
 }
 
