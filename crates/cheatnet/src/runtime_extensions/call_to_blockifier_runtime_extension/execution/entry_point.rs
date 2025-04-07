@@ -1,4 +1,5 @@
 use super::cairo1_execution::execute_entry_point_call_cairo1;
+use super::WalnutEntryPointExecutionError;
 use crate::runtime_extensions::call_to_blockifier_runtime_extension::execution::deprecated::cairo0_execution::execute_entry_point_call_cairo0;
 use crate::runtime_extensions::call_to_blockifier_runtime_extension::rpc::{AddressOrClassHash, CallResult};
 use crate::runtime_extensions::call_to_blockifier_runtime_extension::CheatnetState;
@@ -34,11 +35,16 @@ use std::rc::Rc;
 use blockifier::execution::entry_point::ExecutableCallEntryPoint;
 use thiserror::Error;
 use conversions::FromConv;
+use crate::runtime_extensions::call_to_blockifier_runtime_extension::rpc::{AddressOrClassHash, CallResult};
+use crate::runtime_extensions::common::sum_syscall_counters;
+use conversions::string::TryFromHexStr;
+use starknet::core::types::Felt;
 
 pub(crate) type ContractClassEntryPointExecutionResult = Result<
     (CallInfo, SyscallUsageMap, Option<Vec<RelocatedTraceEntry>>),
     EntryPointExecutionErrorWithTrace,
 >;
+
 
 // blockifier/src/execution/entry_point.rs:180 (CallEntryPoint::execute)
 #[expect(clippy::too_many_lines)]
@@ -81,6 +87,7 @@ pub fn execute_call_entry_point(
                 },
                 &[],
                 None,
+                None,
             );
             let tracked_resource = *context
                 .tracked_resource_stack
@@ -99,9 +106,13 @@ pub fn execute_call_entry_point(
     let storage_address = entry_point.storage_address;
     let storage_class_hash = state.get_class_hash_at(entry_point.storage_address)?;
     if storage_class_hash == ClassHash::default() {
-        return Err(
-            PreExecutionError::UninitializedStorageAddress(entry_point.storage_address).into(),
+        let error = EntryPointExecutionError::PreExecutionError(
+            PreExecutionError::UninitializedStorageAddress(entry_point.storage_address),
         );
+        // Update the cheatnet_state with the error so that the call trace is displayed with error
+        // when the contract is not deployed
+        exit_error_call(&error, cheatnet_state, resources, entry_point, None, None);
+        return Err(error);
     }
     let maybe_replacement_class = cheatnet_state
         .replaced_bytecode_contracts
@@ -150,7 +161,8 @@ pub fn execute_call_entry_point(
             state,
             cheatnet_state,
             context,
-        ),
+        )
+        .map_err(WalnutEntryPointExecutionError::from),
         RunnableCompiledClass::V1(compiled_class_v1) => execute_entry_point_call_cairo1(
             entry_point.clone(),
             &compiled_class_v1,
@@ -162,18 +174,24 @@ pub fn execute_call_entry_point(
 
     // region: Modified blockifier code
     match result {
-        Ok((call_info, syscall_usage, vm_trace)) => {
+        Ok((call_info, syscall_usage, vm_trace, vm_memory)) => {
             remove_syscall_resources_and_exit_success_call(
                 &call_info,
                 &syscall_usage,
                 context,
                 cheatnet_state,
                 vm_trace,
+                vm_memory,
             );
             Ok(call_info)
         }
-        Err(EntryPointExecutionErrorWithTrace { source: err, trace }) => {
-            if let Some(pc) = trace
+        Err(err) => match err {
+            WalnutEntryPointExecutionError::EntryPointExecutionErrorWithTraceAndMemory {
+                error,
+                vm_trace,
+                vm_memory,
+            } => {
+                if let Some(pc) = trace
                 .as_ref()
                 .and_then(|trace| trace.last())
                 .map(|entry| entry.pc)
@@ -182,9 +200,21 @@ pub fn execute_call_entry_point(
                     .encountered_errors
                     .push(EncounteredError { pc, class_hash });
             }
-            exit_error_call(&err, cheatnet_state, &entry_point, trace);
-            Err(err)
-        }
+                exit_error_call(
+                    &error,
+                    cheatnet_state,
+                    resources,
+                    entry_point,
+                    vm_trace,
+                    Some(vm_memory),
+                );
+                Err(error)
+            }
+            WalnutEntryPointExecutionError::EntryPointExecutionError(error) => {
+                exit_error_call(&error, cheatnet_state, resources, entry_point, None, None);
+                Err(error)
+            }
+        },
     }
     // endregion
 }
@@ -195,6 +225,7 @@ fn remove_syscall_resources_and_exit_success_call(
     context: &mut EntryPointExecutionContext,
     cheatnet_state: &mut CheatnetState,
     vm_trace: Option<Vec<RelocatedTraceEntry>>,
+    vm_memory: Option<Vec<Option<Felt>>>,
 ) {
     let versioned_constants = context.tx_context.block_context.versioned_constants();
     // We don't want the syscall resources to pollute the results
@@ -224,6 +255,7 @@ fn remove_syscall_resources_and_exit_success_call(
         CallResult::from_success(call_info),
         &call_info.execution.l2_to_l1_messages,
         vm_trace,
+        vm_memory,
     );
 }
 
@@ -232,6 +264,7 @@ fn exit_error_call(
     cheatnet_state: &mut CheatnetState,
     entry_point: &ExecutableCallEntryPoint,
     vm_trace: Option<Vec<RelocatedTraceEntry>>,
+    vm_memory: Option<Vec<Option<Felt>>>,
 ) {
     let identifier = match entry_point.call_type {
         CallType::Call => AddressOrClassHash::ContractAddress(entry_point.storage_address),
@@ -244,6 +277,7 @@ fn exit_error_call(
         CallResult::from_err(error, &identifier),
         &[],
         vm_trace,
+        vm_memory,
     );
 }
 

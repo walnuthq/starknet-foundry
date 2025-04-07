@@ -22,6 +22,7 @@ use conversions::string::TryFromHexStr;
 use runtime::starknet::constants::TEST_CONTRACT_CLASS_HASH;
 use runtime::starknet::context::SerializableBlockInfo;
 use runtime::starknet::state::DictStateReader;
+use starknet::core::types::Felt;
 use starknet_api::block::BlockInfo;
 use starknet_api::core::{ChainId, EntryPointSelector};
 use starknet_api::transaction::fields::ContractAddressSalt;
@@ -174,6 +175,7 @@ pub struct CallTrace {
     pub used_l1_resources: L1Resources,
     pub used_syscalls: SyscallUsageMap,
     pub vm_trace: Option<Vec<RelocatedTraceEntry>>,
+    pub vm_memory: Option<Vec<Option<Felt>>>,
     pub gas_consumed: u64,
 }
 
@@ -204,6 +206,7 @@ impl CallTrace {
             nested_calls: vec![],
             result: CallResult::Success { ret_data: vec![] },
             vm_trace: None,
+            vm_memory: None,
             gas_consumed: u64::default(),
         }
     }
@@ -505,6 +508,7 @@ impl TraceData {
         result: CallResult,
         l2_to_l1_messages: &[OrderedL2ToL1Message],
         vm_trace: Option<Vec<RelocatedTraceEntry>>,
+        vm_memory: Option<Vec<Option<Felt>>>,
     ) {
         let CallStackElement {
             call_trace: last_call,
@@ -524,6 +528,7 @@ impl TraceData {
 
         last_call.result = result;
         last_call.vm_trace = vm_trace;
+        last_call.vm_memory = vm_memory;
     }
 
     pub fn add_deploy_without_constructor_node(&mut self) {

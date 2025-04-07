@@ -26,6 +26,9 @@ use cairo_vm::{
     vm::runners::cairo_runner::{CairoArg, CairoRunner},
 };
 use runtime::{ExtendedRuntime, StarknetRuntime};
+use starknet::core::types::Felt;
+
+use super::{WalnutEntryPointExecutionError, WalnutEntryPointExecutionResult};
 
 // blockifier/src/execution/cairo1_execution.rs:48 (execute_entry_point_call)
 pub fn execute_entry_point_call_cairo1(
@@ -34,13 +37,17 @@ pub fn execute_entry_point_call_cairo1(
     state: &mut dyn State,
     cheatnet_state: &mut CheatnetState, // Added parameter
     context: &mut EntryPointExecutionContext,
-) -> ContractClassEntryPointExecutionResult {
+) -> WalnutEntryPointExecutionResult<(
+    CallInfo,
+    SyscallCounter,
+    Option<Vec<RelocatedTraceEntry>>,
+    Option<Vec<Option<Felt>>>,
+) {
     let tracked_resource = *context
         .tracked_resource_stack
         .last()
         .expect("Unexpected empty tracked resource.");
     let entry_point_initial_budget = context.gas_costs().base.entry_point_initial_budget;
-
     let VmExecutionContext {
         mut runner,
         mut syscall_handler,
@@ -62,7 +69,8 @@ pub fn execute_entry_point_call_cairo1(
         &mut syscall_handler.read_only_segments,
         &entry_point,
         entry_point_initial_budget,
-    )?;
+    )
+    .map_err(EntryPointExecutionError::from)?;
     let n_total_args = args.len();
 
     // region: Modified blockifier code
@@ -76,7 +84,7 @@ pub fn execute_entry_point_call_cairo1(
     };
 
     // Execute.
-    cheatable_run_entry_point(
+    let err = cheatable_run_entry_point(
         &mut runner,
         &mut cheatable_runtime,
         &entry_point,
@@ -85,7 +93,37 @@ pub fn execute_entry_point_call_cairo1(
     )
     .on_error_get_last_pc(&mut runner)?;
 
-    let trace = get_relocated_vm_trace(&mut runner);
+    let vm_trace = if cheatable_runtime
+        .extension
+        .cheatnet_state
+        .trace_data
+        .is_vm_trace_needed
+    {
+        Some(get_relocated_vm_trace(&runner))
+    } else {
+        None
+    };
+
+    let vm_memory = runner.relocated_memory.clone();
+
+    match err {
+        Ok(_) => {}
+        Err(err) => {
+            match err {
+                EntryPointExecutionError::CairoRunError(_) => {
+                    return Err(WalnutEntryPointExecutionError::EntryPointExecutionErrorWithTraceAndMemory {
+                    error: err,
+                    vm_trace,
+                    vm_memory,
+                });
+                }
+                _ => {
+                    return Err(WalnutEntryPointExecutionError::from(err));
+                }
+            }
+        }
+    }
+
     let syscall_usage_map = cheatable_runtime
         .extended_runtime
         .hint_handler
@@ -98,20 +136,24 @@ pub fn execute_entry_point_call_cairo1(
         n_total_args,
         program_extra_data_length,
         tracked_resource,
-    )?;
+    )
+    .map_err(EntryPointExecutionError::from)?;
     if call_info.execution.failed {
-        return Err(EntryPointExecutionErrorWithTrace {
-            source: EntryPointExecutionError::ExecutionFailed {
-                error_trace: extract_trailing_cairo1_revert_trace(
-                    &call_info,
-                    Cairo1RevertHeader::Execution,
-                ),
+        return Err(
+            WalnutEntryPointExecutionError::EntryPointExecutionErrorWithTraceAndMemory {
+                error: EntryPointExecutionError::ExecutionFailed {
+                    error_trace: extract_trailing_cairo1_revert_trace(
+                        &call_info,
+                        Cairo1RevertHeader::Execution,
+                    ),
+                },
+                vm_trace,
+                vm_memory,
             },
-            trace,
-        });
+        );
     }
 
-    Ok((call_info, syscall_usage_map, trace))
+    Ok((call_info, syscall_usage_map, vm_trace, Some(vm_memory)))
     // endregion
 }
 
@@ -129,18 +171,20 @@ pub fn cheatable_run_entry_point(
     // endregion
     let args: Vec<&CairoArg> = args.iter().collect();
 
-    runner.run_from_entrypoint(
+    let result = runner.run_from_entrypoint(
         entry_point.pc(),
         &args,
         verify_secure,
         Some(program_segment_size),
         hint_processor,
-    )?;
+    );
 
     // region: Modified blockifier code
     // Relocate trace to then collect it
     runner.relocate(true).map_err(CairoRunError::from)?;
     // endregion
+
+    result?;
 
     Ok(())
 }
