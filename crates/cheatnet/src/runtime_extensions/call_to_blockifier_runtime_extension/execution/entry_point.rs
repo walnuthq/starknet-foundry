@@ -14,7 +14,7 @@ use blockifier::{
         entry_point::{
             handle_empty_constructor, CallEntryPoint, CallType, ConstructorContext,
             EntryPointExecutionContext, EntryPointExecutionResult,
-            FAULTY_CLASS_HASH,
+            FAULTY_CLASS_HASH, EntryPointRevertInfo
         },
         errors::{EntryPointExecutionError, PreExecutionError},
     },
@@ -74,6 +74,7 @@ pub fn execute_call_entry_point(
             let ret_data_f252: Vec<Felt> =
                 ret_data.iter().map(|datum| Felt::from_(*datum)).collect();
             cheatnet_state.trace_data.exit_nested_call(
+                None,
                 ExecutionResources::default(),
                 u64::default(),
                 HashMap::default(),
@@ -81,13 +82,25 @@ pub fn execute_call_entry_point(
                     ret_data: ret_data_f252,
                 },
                 &[],
+                &[],
                 None,
                 None,
             );
-            let tracked_resource = *context
-                .tracked_resource_stack
-                .last()
-                .expect("Unexpected empty tracked resource.");
+            let storage_address = entry_point.storage_address;
+
+            let storage_class_hash = state.get_class_hash_at(entry_point.storage_address)?;
+            let maybe_replacement_class = cheatnet_state
+                .replaced_bytecode_contracts
+                .get(&storage_address)
+                .copied();
+            let class_hash = entry_point
+                .class_hash
+                .or(maybe_replacement_class)
+                .unwrap_or(storage_class_hash); // If not given, take the storage contract class hash.
+
+            let contract_class = state.get_compiled_class(class_hash)?;
+
+            let tracked_resource = contract_class.get_current_tracked_resource(context);
             return Ok(mocked_call_info(
                 entry_point.clone(),
                 ret_data.clone(),
@@ -146,7 +159,7 @@ pub fn execute_call_entry_point(
         return Err(PreExecutionError::FraudAttempt.into());
     }
 
-    let entry_point = ExecutableCallEntryPoint {
+    let mut entry_point = ExecutableCallEntryPoint {
         class_hash,
         code_address: entry_point.code_address,
         entry_point_type: entry_point.entry_point_type,
@@ -159,6 +172,21 @@ pub fn execute_call_entry_point(
     };
 
     let contract_class = state.get_compiled_class(class_hash)?;
+    let current_tracked_resource = contract_class.get_current_tracked_resource(context);
+
+    context.revert_infos.0.push(EntryPointRevertInfo::new(
+        entry_point.storage_address,
+        storage_class_hash,
+        context.n_emitted_events,
+        context.n_sent_messages_to_l1,
+    ));
+    if current_tracked_resource == TrackedResource::CairoSteps {
+        // Override the initial gas with a high value so it won't limit the run.
+        entry_point.initial_gas = context.versioned_constants().infinite_gas_for_vm_mode();
+    }
+    context
+        .tracked_resource_stack
+        .push(current_tracked_resource);
 
     // Region: Modified blockifier code
     let result = match contract_class {
@@ -190,6 +218,10 @@ pub fn execute_call_entry_point(
                 vm_trace,
                 vm_memory,
             );
+            context
+                .tracked_resource_stack
+                .pop()
+                .expect("Unexpected empty tracked resource.");
             Ok(call_info)
         }
         Err(err) => match err {
@@ -215,10 +247,20 @@ pub fn execute_call_entry_point(
                     vm_trace,
                     Some(vm_memory),
                 );
+                context
+                    .tracked_resource_stack
+                    .pop()
+                    .expect("Unexpected empty tracked resource.");
+
                 Err(err)
             }
             WalnutEntryPointExecutionError::EntryPointExecutionError(error) => {
                 exit_error_call(&error, cheatnet_state, &entry_point, None, None);
+                context
+                    .tracked_resource_stack
+                    .pop()
+                    .expect("Unexpected empty tracked resource.");
+
                 Err(error)
             }
         },
@@ -239,6 +281,8 @@ fn remove_syscall_resources_and_exit_success_call(
     let mut resources = call_info.resources.clone();
     let mut gas_consumed = call_info.execution.gas_consumed;
 
+    let tracked_resource = context.tracked_resource_stack.last().copied();
+
     match &context
         .tracked_resource_stack
         .last()
@@ -256,11 +300,13 @@ fn remove_syscall_resources_and_exit_success_call(
         aggregate_nested_syscall_usage(&cheatnet_state.trace_data.current_call_stack.top());
     let syscall_usage = sum_syscall_usage(nested_syscall_usage_sum, syscall_usage);
     cheatnet_state.trace_data.exit_nested_call(
+        tracked_resource,
         resources,
         gas_consumed,
         syscall_usage,
         CallResult::from_success(call_info),
         &call_info.execution.l2_to_l1_messages,
+        &call_info.execution.events,
         vm_trace,
         vm_memory,
     );
@@ -278,10 +324,12 @@ fn exit_error_call(
         CallType::Delegate => AddressOrClassHash::ClassHash(entry_point.class_hash),
     };
     cheatnet_state.trace_data.exit_nested_call(
+        None,
         ExecutionResources::default(),
         u64::default(),
         HashMap::default(),
         CallResult::from_err(error, &identifier),
+        &[],
         &[],
         vm_trace,
         vm_memory,
