@@ -276,25 +276,25 @@ fn remove_syscall_resources_and_exit_success_call(
     vm_trace: Option<Vec<RelocatedTraceEntry>>,
     vm_memory: Option<Vec<Option<Felt>>>,
 ) {
-    let versioned_constants = context.tx_context.block_context.versioned_constants();
     // We don't want the syscall resources to pollute the results
-    let mut resources = call_info.resources.clone();
-    let mut gas_consumed = call_info.execution.gas_consumed;
+    let resources = call_info.resources.clone();
+    let gas_consumed = call_info.execution.gas_consumed;
 
     let tracked_resource = context.tracked_resource_stack.last().copied();
 
-    match &context
-        .tracked_resource_stack
-        .last()
-        .expect("Unexpected empty tracked resource.")
-    {
-        TrackedResource::CairoSteps => {
-            resources -= &versioned_constants.get_additional_os_syscall_resources(syscall_usage);
-        }
-        TrackedResource::SierraGas => {
-            gas_consumed -= get_syscalls_gas_consumed(syscall_usage, versioned_constants);
-        }
-    };
+    // NOTE: Commented out to show actual resources reported by the sequencer, including syscalls.
+    //    match &context
+    //        .tracked_resource_stack
+    //        .last()
+    //        .expect("Unexpected empty tracked resource.")
+    //    {
+    //        TrackedResource::CairoSteps => {
+    //            resources -= &versioned_constants.get_additional_os_syscall_resources(syscall_usage);
+    //        }
+    //        TrackedResource::SierraGas => {
+    //            gas_consumed -= get_syscalls_gas_consumed(syscall_usage, versioned_constants);
+    //        }
+    //    };
 
     let nested_syscall_usage_sum =
         aggregate_nested_syscall_usage(&cheatnet_state.trace_data.current_call_stack.top());
