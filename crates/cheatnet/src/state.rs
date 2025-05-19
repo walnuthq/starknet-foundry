@@ -7,22 +7,23 @@ use crate::runtime_extensions::forge_runtime_extension::cheatcodes::cheat_execut
 };
 use crate::runtime_extensions::forge_runtime_extension::cheatcodes::spy_events::Event;
 use crate::runtime_extensions::forge_runtime_extension::cheatcodes::spy_messages_to_l1::MessageToL1;
-use blockifier::execution::call_info::OrderedL2ToL1Message;
-use blockifier::execution::contract_class::RunnableCompiledClass;
+use blockifier::execution::call_info::{OrderedEvent, OrderedL2ToL1Message};
+use blockifier::execution::contract_class::{RunnableCompiledClass, TrackedResource};
 use blockifier::execution::entry_point::CallEntryPoint;
 use blockifier::execution::syscalls::hint_processor::SyscallUsageMap;
 use blockifier::state::errors::StateError::UndeclaredClassHash;
 use blockifier::state::state_api::{StateReader, StateResult};
 use cairo_annotations::trace_data::L1Resources;
-use cairo_vm::Felt252;
 use cairo_vm::vm::runners::cairo_runner::ExecutionResources;
 use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
+use cairo_vm::Felt252;
 use conversions::serde::deserialize::CairoDeserialize;
 use conversions::serde::serialize::{BufferWriter, CairoSerialize};
 use conversions::string::TryFromHexStr;
 use runtime::starknet::constants::TEST_CONTRACT_CLASS_HASH;
 use runtime::starknet::context::SerializableBlockInfo;
 use runtime::starknet::state::DictStateReader;
+use starknet::core::types::Felt;
 use starknet_api::block::BlockInfo;
 use starknet_api::core::{ChainId, EntryPointSelector};
 use starknet_api::transaction::fields::ContractAddressSalt;
@@ -30,7 +31,6 @@ use starknet_api::{
     core::{ClassHash, CompiledClassHash, ContractAddress, Nonce},
     state::StorageKey,
 };
-use starknet_types_core::felt::Felt;
 use std::cell::{Ref, RefCell};
 use std::collections::{BTreeMap, HashMap};
 use std::rc::Rc;
@@ -180,10 +180,13 @@ pub struct CallTrace {
     // serialize end
 
     // These also include resources used by internal calls
+    pub tracked_resource: Option<TrackedResource>,
     pub used_execution_resources: ExecutionResources,
     pub used_l1_resources: L1Resources,
     pub used_syscalls: SyscallUsageMap,
+    pub used_events: Vec<OrderedEvent>,
     pub vm_trace: Option<Vec<RelocatedTraceEntry>>,
+    pub vm_memory: Option<Vec<Option<Felt>>>,
     pub gas_consumed: u64,
 }
 
@@ -207,12 +210,15 @@ impl CallTrace {
     fn default_successful_call() -> Self {
         Self {
             entry_point: CallEntryPoint::default(),
+            tracked_resource: None,
             used_execution_resources: ExecutionResources::default(),
             used_l1_resources: L1Resources::default(),
             used_syscalls: SyscallUsageMap::default(),
+            used_events: vec![],
             nested_calls: vec![],
             result: CallResult::Success { ret_data: vec![] },
             vm_trace: None,
+            vm_memory: None,
             gas_consumed: u64::default(),
         }
     }
@@ -510,12 +516,15 @@ impl TraceData {
 
     pub fn exit_nested_call(
         &mut self,
+        tracked_resource: Option<TrackedResource>,
         execution_resources: ExecutionResources,
         gas_consumed: u64,
         used_syscalls: SyscallUsageMap,
         result: CallResult,
         l2_to_l1_messages: &[OrderedL2ToL1Message],
+        events: &[OrderedEvent],
         vm_trace: Option<Vec<RelocatedTraceEntry>>,
+        vm_memory: Option<Vec<Option<Felt>>>,
     ) {
         let CallStackElement {
             call_trace: last_call,
@@ -523,6 +532,7 @@ impl TraceData {
         } = self.current_call_stack.pop();
 
         let mut last_call = last_call.borrow_mut();
+        last_call.tracked_resource = tracked_resource;
         last_call.used_execution_resources = execution_resources;
         last_call.gas_consumed = gas_consumed;
 
@@ -532,9 +542,10 @@ impl TraceData {
             .iter()
             .map(|ordered_message| ordered_message.message.payload.0.len())
             .collect();
-
+        last_call.used_events = events.to_vec();
         last_call.result = result;
         last_call.vm_trace = vm_trace;
+        last_call.vm_memory = vm_memory;
     }
 
     pub fn add_deploy_without_constructor_node(&mut self) {

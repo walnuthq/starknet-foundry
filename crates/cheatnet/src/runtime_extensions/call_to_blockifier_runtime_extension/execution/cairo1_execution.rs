@@ -1,7 +1,7 @@
 use crate::runtime_extensions::call_to_blockifier_runtime_extension::CheatnetState;
 use crate::runtime_extensions::call_to_blockifier_runtime_extension::execution::entry_point::{
     CallInfoWithExecutionData, ContractClassEntryPointExecutionResult,
-    extract_trace_and_register_errors,
+    extract_trace_and_memory_and_register_errors,
 };
 use crate::runtime_extensions::cheatable_starknet_runtime_extension::CheatableStarknetRuntimeExtension;
 use crate::runtime_extensions::common::get_relocated_vm_trace;
@@ -53,7 +53,8 @@ pub(crate) fn execute_entry_point_call_cairo1(
         state,
         context,
         ExecutionRunnerMode::Tracing,
-    )?;
+    )
+    .map_err(EntryPointExecutionError::from)?;
 
     let args = prepare_call_arguments(
         &syscall_handler.base.call,
@@ -62,7 +63,8 @@ pub(crate) fn execute_entry_point_call_cairo1(
         &mut syscall_handler.read_only_segments,
         &entry_point,
         entry_point_initial_budget,
-    )?;
+    )
+    .map_err(EntryPointExecutionError::from)?;
     let n_total_args = args.len();
 
     // region: Modified blockifier code
@@ -84,7 +86,7 @@ pub(crate) fn execute_entry_point_call_cairo1(
         program_extra_data_length,
     )
     .map_err(|source| {
-        extract_trace_and_register_errors(
+        extract_trace_and_memory_and_register_errors(
             source,
             class_hash,
             &mut runner,
@@ -93,6 +95,8 @@ pub(crate) fn execute_entry_point_call_cairo1(
     })?;
 
     let trace = get_relocated_vm_trace(&mut runner);
+    let memory = runner.relocated_memory.clone();
+
     let syscall_usage = cheatable_runtime
         .extended_runtime
         .hint_handler
@@ -128,6 +132,7 @@ pub(crate) fn execute_entry_point_call_cairo1(
         call_info,
         syscall_usage,
         vm_trace: Some(trace),
+        vm_memory: Some(memory),
     })
     // endregion
 }
@@ -146,18 +151,20 @@ pub fn cheatable_run_entry_point(
     // endregion
     let args: Vec<&CairoArg> = args.iter().collect();
 
-    runner.run_from_entrypoint(
+    let result = runner.run_from_entrypoint(
         entry_point.pc(),
         &args,
         verify_secure,
         Some(program_segment_size),
         hint_processor,
-    )?;
+    );
 
     // region: Modified blockifier code
     // Relocate trace to then collect it
     runner.relocate(true).map_err(CairoRunError::from)?;
     // endregion
+
+    result?;
 
     Ok(())
 }
