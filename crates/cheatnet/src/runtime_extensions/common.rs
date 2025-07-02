@@ -62,5 +62,5 @@ pub fn get_relocated_vm_trace(cairo_runner: &mut CairoRunner) -> Vec<RelocatedTr
     cairo_runner
         .relocated_trace
         .clone()
-        .expect("relocated trace should be present")
+        .unwrap_or_default()
 }
