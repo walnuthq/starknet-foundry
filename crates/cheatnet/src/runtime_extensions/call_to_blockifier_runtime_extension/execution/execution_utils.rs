@@ -11,6 +11,8 @@ use blockifier::execution::entry_point::{CallEntryPoint, CallType, ExecutableCal
 use blockifier::execution::errors::EntryPointExecutionError;
 use blockifier::execution::syscalls::vm_syscall_utils::SyscallUsageMap;
 use cairo_vm::vm::runners::cairo_runner::ExecutionResources;
+use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
+use starknet_types_core::felt::Felt;
 
 pub(crate) fn resolve_cheated_data_for_call(
     entry_point: &mut CallEntryPoint,
@@ -35,6 +37,8 @@ pub(crate) fn update_trace_data(
     syscall_usage_vm_resources: &SyscallUsageMap,
     syscall_usage_sierra_gas: &SyscallUsageMap,
     cheatnet_state: &mut CheatnetState,
+    vm_trace: Option<Vec<RelocatedTraceEntry>>,
+    vm_memory: Option<Vec<Option<Felt>>>,
 ) {
     let nested_syscall_usage_vm_resources =
         get_nested_calls_syscalls_vm_resources(&cheatnet_state.trace_data.current_call_stack.top());
@@ -55,6 +59,7 @@ pub(crate) fn update_trace_data(
         .unwrap_or_default();
 
     cheatnet_state.trace_data.update_current_call(
+        Some(call_info.tracked_resource),
         call_info.resources.clone(),
         call_info.execution.gas_consumed,
         syscall_usage_vm_resources,
@@ -63,6 +68,8 @@ pub(crate) fn update_trace_data(
         &call_info.execution.l2_to_l1_messages,
         signature,
         call_info.execution.events.clone(),
+        vm_trace,
+        vm_memory,
     );
 }
 
@@ -70,12 +77,15 @@ pub(crate) fn exit_error_call(
     error: &EntryPointExecutionError,
     cheatnet_state: &mut CheatnetState,
     entry_point: &ExecutableCallEntryPoint,
+    vm_trace: Option<Vec<RelocatedTraceEntry>>,
+    vm_memory: Option<Vec<Option<Felt>>>,
 ) {
     let identifier = match entry_point.call_type {
         CallType::Call => AddressOrClassHash::ContractAddress(entry_point.storage_address),
         CallType::Delegate => AddressOrClassHash::ClassHash(entry_point.class_hash),
     };
     cheatnet_state.trace_data.update_and_exit_nested_call(
+        None,
         ExecutionResources::default(),
         u64::default(),
         SyscallUsageMap::default(),
@@ -84,5 +94,7 @@ pub(crate) fn exit_error_call(
         &[],
         vec![],
         vec![],
+        vm_trace,
+        vm_memory
     );
 }

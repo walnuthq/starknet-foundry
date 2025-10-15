@@ -11,7 +11,7 @@ use crate::runtime_extensions::forge_runtime_extension::cheatcodes::cheat_execut
 use crate::runtime_extensions::forge_runtime_extension::cheatcodes::spy_events::Event;
 use crate::runtime_extensions::forge_runtime_extension::cheatcodes::spy_messages_to_l1::MessageToL1;
 use blockifier::execution::call_info::{OrderedEvent, OrderedL2ToL1Message};
-use blockifier::execution::contract_class::RunnableCompiledClass;
+use blockifier::execution::contract_class::{RunnableCompiledClass, TrackedResource};
 use blockifier::execution::entry_point::CallEntryPoint;
 use blockifier::execution::syscalls::vm_syscall_utils::SyscallUsageMap;
 use blockifier::state::errors::StateError::UndeclaredClassHash;
@@ -213,11 +213,14 @@ pub struct CallTrace {
     // serialize end
 
     // These also include resources used by internal calls
+    pub tracked_resource: Option<TrackedResource>,
     pub used_execution_resources: ExecutionResources,
     pub used_l1_resources: L1Resources,
     pub used_syscalls_vm_resources: SyscallUsageMap,
     pub used_syscalls_sierra_gas: SyscallUsageMap,
+    pub used_events: Vec<OrderedEvent>,
     pub vm_trace: Option<Vec<RelocatedTraceEntry>>,
+    pub vm_memory: Option<Vec<Option<Felt>>>,
     pub gas_consumed: u64,
     pub events: Vec<OrderedEvent>,
     pub signature: Vec<Felt>,
@@ -243,13 +246,16 @@ impl CallTrace {
     fn default_successful_call() -> Self {
         Self {
             entry_point: CallEntryPoint::default(),
+            tracked_resource: None,
             used_execution_resources: ExecutionResources::default(),
             used_l1_resources: L1Resources::default(),
             used_syscalls_vm_resources: SyscallUsageMap::default(),
             used_syscalls_sierra_gas: SyscallUsageMap::default(),
+            used_events: vec![],
             nested_calls: vec![],
             result: CallResult::Success { ret_data: vec![] },
             vm_trace: None,
+            vm_memory: None,
             gas_consumed: u64::default(),
             events: vec![],
             signature: vec![],
@@ -575,6 +581,7 @@ impl TraceData {
     #[expect(clippy::too_many_arguments)]
     pub fn update_current_call(
         &mut self,
+        tracked_resource: Option<TrackedResource>,
         execution_resources: ExecutionResources,
         gas_consumed: u64,
         used_syscalls_vm_resources: SyscallUsageMap,
@@ -583,10 +590,13 @@ impl TraceData {
         l2_to_l1_messages: &[OrderedL2ToL1Message],
         signature: Vec<Felt>,
         events: Vec<OrderedEvent>,
+        vm_trace: Option<Vec<RelocatedTraceEntry>>,
+        vm_memory: Option<Vec<Option<Felt>>>,
     ) {
         let current_call = self.current_call_stack.top();
         let mut current_call = current_call.borrow_mut();
 
+        current_call.tracked_resource = tracked_resource;
         current_call.used_execution_resources = execution_resources;
         current_call.gas_consumed = gas_consumed;
         current_call.used_syscalls_vm_resources = used_syscalls_vm_resources;
@@ -600,11 +610,14 @@ impl TraceData {
         current_call.result = result;
         current_call.signature = signature;
         current_call.events = events;
+        current_call.vm_trace = vm_trace;
+        current_call.vm_memory = vm_memory;
     }
 
     #[expect(clippy::too_many_arguments)]
     pub fn update_and_exit_nested_call(
         &mut self,
+        tracked_resource: Option<TrackedResource>,
         execution_resources: ExecutionResources,
         gas_consumed: u64,
         used_syscalls_vm_resources: SyscallUsageMap,
@@ -613,8 +626,11 @@ impl TraceData {
         l2_to_l1_messages: &[OrderedL2ToL1Message],
         signature: Vec<Felt>,
         events: Vec<OrderedEvent>,
+        vm_trace: Option<Vec<RelocatedTraceEntry>>,
+        vm_memory: Option<Vec<Option<Felt>>>,
     ) {
         self.update_current_call(
+            tracked_resource,
             execution_resources,
             gas_consumed,
             used_syscalls_vm_resources,
@@ -623,6 +639,8 @@ impl TraceData {
             l2_to_l1_messages,
             signature,
             events,
+            vm_trace,
+            vm_memory,
         );
         self.exit_nested_call();
     }
