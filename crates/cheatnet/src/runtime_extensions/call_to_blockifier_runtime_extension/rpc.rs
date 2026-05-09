@@ -25,6 +25,7 @@ use blockifier::execution::{
 use blockifier::state::errors::StateError;
 use cairo_vm::vm::errors::hint_errors::HintError;
 use conversions::{byte_array::ByteArray, serde::serialize::CairoSerialize, string::IntoHexStr};
+use serde::Serialize;
 use shared::utils::build_readable_text;
 use starknet_api::core::EntryPointSelector;
 use starknet_api::{
@@ -40,7 +41,7 @@ pub struct UsedResources {
     pub l1_handler_payload_lengths: Vec<usize>,
 }
 
-#[derive(Debug, CairoSerialize)]
+#[derive(Debug, Clone, CairoSerialize, Serialize)]
 pub struct CallSuccess {
     pub ret_data: Vec<Felt>,
 }
@@ -67,7 +68,7 @@ pub type CallResult = Result<CallSuccess, CallFailure>;
 /// Enum representing a possible call failure and its type.
 /// `Recoverable` - Meant to be caught by the user.
 /// `Unrecoverable` - Equivalent of `panic!` in rust.
-#[derive(Debug, Clone, CairoSerialize)]
+#[derive(Debug, Clone, CairoSerialize, Serialize)]
 pub enum CallFailure {
     Recoverable { panic_data: Vec<Felt> },
     Unrecoverable { msg: ByteArray },

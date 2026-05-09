@@ -10,6 +10,8 @@ use blockifier::execution::call_info::CallInfo;
 use blockifier::execution::entry_point::{CallEntryPoint, CallType, ExecutableCallEntryPoint};
 use blockifier::execution::errors::EntryPointExecutionError;
 use blockifier::execution::syscalls::vm_syscall_utils::SyscallUsageMap;
+use cairo_vm::vm::trace::trace_entry::RelocatedTraceEntry;
+use starknet_types_core::felt::Felt;
 
 pub(crate) fn resolve_cheated_data_for_call(
     entry_point: &mut CallEntryPoint,
@@ -40,6 +42,8 @@ pub(crate) fn update_trace_data(
     syscall_usage_vm_resources: &SyscallUsageMap,
     syscall_usage_sierra_gas: &SyscallUsageMap,
     cheatnet_state: &mut CheatnetState,
+    vm_trace: Option<Vec<RelocatedTraceEntry>>,
+    vm_memory: Option<Vec<Option<Felt>>>,
 ) {
     let nested_syscall_usage_vm_resources =
         get_nested_calls_syscalls_vm_resources(&cheatnet_state.trace_data.current_call_stack.top());
@@ -69,6 +73,17 @@ pub(crate) fn update_trace_data(
         signature,
         call_info.execution.events.clone(),
     );
+
+    cheatnet_state
+        .trace_data
+        .set_tracked_resource_for_current_call(call_info.tracked_resource);
+
+    if let Some(trace) = vm_trace {
+        cheatnet_state.trace_data.set_vm_trace_for_current_call(trace);
+    }
+    if let Some(memory) = vm_memory {
+        cheatnet_state.trace_data.set_vm_memory_for_current_call(memory);
+    }
 }
 
 /// Clears `events` and `l2_to_l1_messages` from a reverted call and all its inner calls that did not fail.
@@ -94,6 +109,8 @@ pub(crate) fn exit_error_call(
     error: &EntryPointExecutionError,
     cheatnet_state: &mut CheatnetState,
     entry_point: &ExecutableCallEntryPoint,
+    vm_trace: Option<Vec<RelocatedTraceEntry>>,
+    vm_memory: Option<Vec<Option<Felt>>>,
 ) {
     let identifier = match entry_point.call_type {
         CallType::Call => AddressOrClassHash::ContractAddress(entry_point.storage_address),
@@ -105,5 +122,11 @@ pub(crate) fn exit_error_call(
     trace_data.clear_current_call_events_and_messages();
 
     trace_data.update_current_call_result(from_error(error, &identifier));
+    if let Some(trace) = vm_trace {
+        trace_data.set_vm_trace_for_current_call(trace);
+    }
+    if let Some(memory) = vm_memory {
+        trace_data.set_vm_memory_for_current_call(memory);
+    }
     trace_data.exit_nested_call();
 }
