@@ -225,6 +225,7 @@ impl CallTrace {
             nested_calls: vec![],
             result: Ok(CallSuccess { ret_data: vec![] }),
             vm_trace: None,
+            vm_memory: None,
             gas_consumed: u64::default(),
             events: vec![],
             signature: vec![],
